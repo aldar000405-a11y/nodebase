@@ -16,5 +16,5 @@ export const trpc = createTRPCOptionsProxy({
   queryClient: getQueryClient,
 });
 
-// Caller مباشر (بدون React Query)
-export const caller = appRouter.createCaller({});
+export const createCaller = async () =>
+  appRouter.createCaller(await createTRPCContext());

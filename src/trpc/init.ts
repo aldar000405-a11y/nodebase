@@ -11,7 +11,7 @@ export async function createTRPCContext() {
 }
 
 // 👇 أنشئ tRPC instance مع context
-const t = initTRPC.context<typeof createTRPCContext>().create();
+const t = initTRPC.context<Awaited<ReturnType<typeof createTRPCContext>>>().create();
 
 // 👇 Export tools
 export const createTRPCRouter = t.router;
