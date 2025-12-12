@@ -1,6 +1,7 @@
 "use client";
 
 import { QueryClient, QueryClientProvider, HydrationBoundary } from "@tanstack/react-query";
+import type { DehydratedState } from "@tanstack/react-query";
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import { createTRPCContext } from "@trpc/tanstack-react-query";
 import { useState } from "react";
@@ -19,7 +20,7 @@ export function TRPCReactProvider({
   initialState,
 }: {
   children: React.ReactNode;
-  initialState?: unknown;
+  initialState?: DehydratedState | null | undefined;
 }) {
   const [queryClient] = useState(() => new QueryClient());
   const [trpcClient] = useState(() =>
