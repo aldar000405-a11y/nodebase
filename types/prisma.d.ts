@@ -1,9 +1,2 @@
-declare module "prisma" {
-  const defineConfig: any;
-  export { defineConfig };
-}
+// Removed: Copilot shim not required. See prisma.config.ts for correct imports.
 
-declare module "prisma/config" {
-  const env: any;
-  export { env };
-}

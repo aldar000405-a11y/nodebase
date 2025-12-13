@@ -4,8 +4,6 @@ import "./globals.css";
 import { TRPCReactProvider } from "@/trpc/client";
 import { Toaster } from "@/components/ui/sonner";
 
-// TRPC provider moved to individual pages that need hydration
-
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],

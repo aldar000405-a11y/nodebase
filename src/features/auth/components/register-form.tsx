@@ -155,3 +155,7 @@ export function RegisterForm() {
     </div>
   );
 }
+
+
+// http://localhost:3000/signup
+// http://localhost:3000/login
