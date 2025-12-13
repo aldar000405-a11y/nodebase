@@ -1,6 +1,12 @@
-import { createTRPCRouter, publicProcedure } from "@/trpc/init";
+import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 export const usersRouter = createTRPCRouter({
-  getUsers: publicProcedure.query(async ({ ctx }) => {
-    return ctx.prisma.user.findMany();
+  getUsers: protectedProcedure.query(async ({ ctx }) => {
+    return ctx.prisma.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
+    });
   }),
 });

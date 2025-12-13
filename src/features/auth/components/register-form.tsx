@@ -42,7 +42,6 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export function RegisterForm() {
   const router = useRouter();
-  const trpc = useTRPC();
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),

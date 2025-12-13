@@ -24,7 +24,7 @@ import {
     FormMessage
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-// import { authClient } from "@/lib/auth-Client";
+import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { Value } from "@radix-ui/react-select";
 
@@ -46,7 +46,19 @@ export function LoginForm () {
         },
     });
     const onSubmit = async (values: LoginFormValues) => {
-        console.log(values);};
+        await authClient.signIn.email({
+            email: values.email,
+            password: values.password,
+            callbackURL: "/",
+        }, {
+            onSuccess: () => {
+                router.push("/");
+            },
+            onError: (ctx) => {
+                toast.error(ctx.error.message);
+            }
+        });
+    };
         const isPending = form.formState.isSubmitting;
 
         return(
@@ -89,7 +101,7 @@ export function LoginForm () {
                                             <FormItem>
                                                 <FormLabel>Email</FormLabel>
                                                 <FormControl>
-                                                    <input 
+                                                    <Input 
                                                     type="email"
                                                     placeholder="m@example.com"
                                                     {...field}
@@ -106,8 +118,8 @@ export function LoginForm () {
                                             <FormItem>
                                                 <FormLabel>Password</FormLabel>
                                                 <FormControl>
-                                                    <input 
-                                                    type="Password"
+                                                    <Input 
+                                                    type="password"
                                                     placeholder="********"
                                                     {...field}
                                                     />
