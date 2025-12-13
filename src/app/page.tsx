@@ -1,13 +1,24 @@
-import prisma from "@/lib/db"
+import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import { headers } from "next/headers";
+import { Client } from "./client";
+import { Suspense } from "react";
 
-const Page = async () => {
+export default async function Page() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
 
-  const users = await prisma.user.findMany();
+  if (!session?.user) {
+    redirect("/login");
+  }
+
   return (
-    <div className="min-h-screen w-full flex items-center justify-center">
-     {JSON.stringify(users)}
+    <div>
+      <Suspense fallback={<p>loading...</p>}>
+        <Client />
+      </Suspense>
     </div>
   );
-};
+}
 
-export default Page;
