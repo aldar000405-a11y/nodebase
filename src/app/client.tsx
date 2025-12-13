@@ -14,7 +14,7 @@ export const Client = () => {
                 <div>
                     <p>Found {users.length} user(s):</p>
                     <ul>
-                        {users.map((u: any) => (
+                        {users.map((u) => (
                             <li key={u.id}>{u.email ?? u.name ?? u.id}</li>
                         ))}
                     </ul>

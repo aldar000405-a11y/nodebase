@@ -23,8 +23,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useTRPC } from "@/trpc/client";
-import { useMutation } from "@tanstack/react-query";
 import { authClient } from "@/lib/auth-client";
 
 const registerSchema = z
@@ -154,7 +152,3 @@ export function RegisterForm() {
     </div>
   );
 }
-
-
-// http://localhost:3000/signup
-// http://localhost:3000/login
