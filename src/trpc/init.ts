@@ -1,50 +1,78 @@
+// // src/trpc/init.ts
+// import { initTRPC, TRPCError } from "@trpc/server";
+// // import { FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
+// // import { TRPCError } from "@trpc/server";
+// import { auth } from "@/lib/auth";
+// import { headers } from "next/headers";
+// import {cache} from "react";
+
+// export const createTRPCContext = cache(async () => {
+//   return{ userId: 'user-123' };
+//  });
+
+//  const t = initTRPC.create({
+
+//  })
+
+// export const createTRPCRouter = t.router;
+// export const baseProcedure = t.procedure;
+// export const createCallerFactory = t.createCallerFactory;
+// export const protectedProcedure = baseProcedure.use(async ({ ctx, next }) => {
+//   const session = await auth.api.getSession({
+//   headers: await headers(),
+//   });
+//   if (!session) {
+//     throw new TRPCError({
+//       code: "UNAUTHORIZED",
+//       message: "You must be logged in to access this resource",
+//     });
+//   }
+
+//   return next({ ctx: { ...ctx, auth: session  } });
+// });
+
+
 // src/trpc/init.ts
-import { initTRPC } from "@trpc/server";
-import { FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
-import { TRPCError } from "@trpc/server";
-import { prisma } from "@/lib/prisma";
+import { initTRPC, TRPCError } from "@trpc/server";
 import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
-// 👇 ctx الذي يصل لكل procedure
-export async function createTRPCContext(
-  opts?: FetchCreateContextFnOptions
-) {
-  let userId: string | null = null;
-
-  if (opts?.req) {
-    try {
-      const session = await auth.api.getSession({
-        headers: opts.req.headers,
-      });
-      userId = session?.user?.id ?? null;
-    } catch {
-      userId = null;
-    }
-  }
+export const createTRPCContext = async () => {
+  // استدعاء جلسة المستخدم لكل request
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
 
   return {
-    prisma,
-    userId,
+    session, // يحتوي على user إذا مسجل دخول
+    userId: session?.user?.id ?? null,
   };
-}
+};
 
-// 👇 أنشئ tRPC instance مع context
-const t = initTRPC.context<Awaited<ReturnType<typeof createTRPCContext>>>().create();
+const t = initTRPC.create({});
 
-// 👇 Export tools
+// tRPC exports
 export const createTRPCRouter = t.router;
-export const publicProcedure = t.procedure;
-export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
-  if (!ctx.userId) {
-    throw new TRPCError({ code: "UNAUTHORIZED" });
+export const baseProcedure = t.procedure;
+export const createCallerFactory = t.createCallerFactory;
+
+// Protected procedure
+export const protectedProcedure = baseProcedure.use(async ({ ctx, next }) => {
+  if (!ctx.session || !ctx.session.user) {
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "You must be logged in to access this resource",
+    });
   }
 
+  // تمرير session و userId إلى ctx للـ procedures اللاحقة
   return next({
     ctx: {
       ...ctx,
-      userId: ctx.userId,
+      userId: ctx.session.user.id,
+      auth: ctx.session,
     },
   });
 });
-export const baseProcedure = t.procedure;
-export const createCallerFactory = t.createCallerFactory;
+
+
