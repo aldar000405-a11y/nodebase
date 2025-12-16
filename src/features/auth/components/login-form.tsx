@@ -82,7 +82,13 @@ export function LoginForm () {
                                             type="button"
                                             disabled={isPending}
                                         >
-                                            continue with github
+               <Image
+  src="/logos/github.svg"
+  alt="GitHub"
+  width={20}
+  height={20}
+
+/>                                            continue with github
                                         </Button>
                                         <Button
                                             variant="outline"
@@ -90,6 +96,13 @@ export function LoginForm () {
                                             type="button"
                                             disabled={isPending}
                                         >
+                                               <Image
+  src="/logos/google.svg"
+  alt="google"
+  width={20}
+  height={20}
+
+/>
                                             continue with google
                                         </Button>
                                     </div>
@@ -128,9 +141,11 @@ export function LoginForm () {
                                             </FormItem>
                                         )}
                                         />
-                                        <Button type="submit" className="w-full" disabled={isPending}>
-                                            Login
-                                        </Button>
+ <Button type="submit" className="w-full" disabled={isPending}>
+  Login
+</Button>
+
+
                                     </div>
                                     <div className="text-center text-sm mt-6">
                                         Don't have an account?{" "}

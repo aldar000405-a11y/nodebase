@@ -52,23 +52,42 @@
 //  };
 
 
-"use client"; // ضروري: لأننا نستخدم useRouter و onClick
+// "use client"; // ضروري: لأننا نستخدم useRouter و onClick
 
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { authClient } from "@/lib/auth-client";
+// import { useRouter } from "next/navigation";
+// import { Button } from "@/components/ui/button";
+// import { authClient } from "@/lib/auth-client";
 
-export const LogoutButton = () => {
-  const router = useRouter();
+// export const LogoutButton = () => {
+//   const router = useRouter();
 
-  const handleLogout = async () => {
-    try {
-      await authClient.signOut();       // تسجيل الخروج
-      router.push("/login");            // إعادة التوجيه بعد تسجيل الخروج
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
-  };
+//   const handleLogout = async () => {
+//     try {
+//       await authClient.signOut();       // تسجيل الخروج
+//       router.push("/login");            // إعادة التوجيه بعد تسجيل الخروج
+//     } catch (error) {
+//       console.error("Logout failed:", error);
+//     }
+//   };
 
-  return <Button onClick={handleLogout}>Logout</Button>;
+//   return <Button onClick={handleLogout}>Logout</Button>;
+// };
+
+import "./globals.css";
+import { TRPCProvider } from "@/trpc/provider";
+
+export const metadata = {
+  title: "Nodebase App",
+  description: "TRPC + Next.js Example",
 };
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        <TRPCProvider>{children}</TRPCProvider>
+      </body>
+    </html>
+  );
+}
+

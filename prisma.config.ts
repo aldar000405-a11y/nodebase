@@ -10,6 +10,9 @@ export default defineConfig({
   },
   datasource: {
     // use process.env to avoid depending on prisma/config typings
-    url: process.env.DATABASE_URL || "",
+    url: process.env.DATABASE_URL ?? (() => {
+  throw new Error("DATABASE_URL environment variable is not set");
+})(),
+
   },
 });

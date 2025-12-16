@@ -29,7 +29,13 @@ import { authClient } from "@/lib/auth-client";
 const registerSchema = z
   .object({
     email: z.string().min(1, "Email is required").email("Invalid email address"),
-    password: z.string().min(6, "Password must be at least 6 characters long"),
+    password: z
+  .string()
+  .min(8)
+  .regex(/[A-Z]/)
+  .regex(/[a-z]/)
+  .regex(/[0-9]/),
+
     confirmPassword: z.string().min(6, "Password must be at least 6 characters long"),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -54,7 +60,7 @@ export function RegisterForm() {
   const onSubmit = async (values: RegisterFormValues) => {
     await authClient.signUp.email(
         {
-            name: values.email,
+            name: values.email.split("@")[0],
             email: values.email,
             password: values.password,
             callbackURL: "/",
@@ -63,9 +69,10 @@ export function RegisterForm() {
             onSuccess: () => {
                 router.push("/");
         },
-        onError: (etx) => {
-            toast.error(etx.error.message);
-        }
+       onError: (ctx) => {
+  toast.error(ctx.error.message);
+}
+
     }
     )
 
@@ -88,9 +95,23 @@ export function RegisterForm() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="grid gap-6">
                 <Button variant="outline" className="w-full" type="button" disabled={isPending}>
+                  <Image
+                    src="/logos/github.svg"
+                    alt="GitHub"
+                    width={20}
+                    height={20}
+                  
+                  />
                   continue with github
                 </Button>
                 <Button variant="outline" className="w-full" type="button" disabled={isPending}>
+                  <Image
+                    src="/logos/google.svg"
+                    alt="google"
+                    width={20}
+                    height={20}
+                  
+                  />
                   continue with google
                 </Button>
               </div>
