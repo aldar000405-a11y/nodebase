@@ -43,23 +43,61 @@
 //   export type AppRouter = typeof appRouter;
 
 
+
+// import { inngest } from "@/inngest/client";
+// import { createTRPCRouter, protectedProcedure } from "../init";
+// import prisma from "@/lib/db";
+// import { email } from "zod";
+
+
+// export const appRouter = createTRPCRouter({
+//   getWorkflows: protectedProcedure.query(() => {
+//     return prisma.workflow.findMany();
+//   }),
+
+//   createWorkflow: protectedProcedure.mutation(async () => {
+// await inngest.send({
+//   name: "test/hello.world",
+//   data: {
+//     email: "mohummad@gmail.com"
+//   },
+// });
+
+//     return prisma.workflow.create({
+//       data: { name: "test-workflow" },
+//     });
+//   }),
+// });
+
+// export type AppRouter = typeof appRouter;
+
+
+import { inngest } from "@/inngest/client";
 import { createTRPCRouter, protectedProcedure } from "../init";
 import prisma from "@/lib/db";
 
-
 export const appRouter = createTRPCRouter({
-  getWorkflows: protectedProcedure.query(() => {
-    return prisma.workflow.findMany();
+  getWorkflows: protectedProcedure.query(({ ctx }) => {
+    return prisma.workflow.findMany({
+      where: {
+        userId: ctx.userId,
+      },
+    });
   }),
 
-  createWorkflow: protectedProcedure.mutation(async () => {
-    // محاكاة تأخير 3 مرات
-    await new Promise((resolve) => setTimeout(resolve, 5000));
-    await new Promise((resolve) => setTimeout(resolve, 5000));
-    await new Promise((resolve) => setTimeout(resolve, 5000));
+  createWorkflow: protectedProcedure.mutation(async ({ ctx }) => {
+    await inngest.send({
+      name: "test/hello.world",
+      data: {
+        email: ctx.auth?.user?.email,
+      },
+    });
 
     return prisma.workflow.create({
-      data: { name: "test-workflow" },
+      data: {
+        name: "test-workflow",
+        userId: ctx.userId,
+      },
     });
   }),
 });

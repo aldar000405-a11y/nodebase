@@ -30,7 +30,7 @@ import { Value } from "@radix-ui/react-select";
 
 const formSchema = z.object({
     email: z.string().min(1, "Email is required").email("Invalid email address"),
-    password: z.string().min(6, "Password must be at least 6 characters long"),
+    password: z.string().min(8, "Password must be at least 8 characters long").regex(/[A-Z]/, "Password must contain uppercase letter").regex(/[a-z]/, "Password must contain lowercase letter").regex(/[0-9]/, "Password must contain number"),
 });
 
 type LoginFormValues = z.infer<typeof formSchema>;

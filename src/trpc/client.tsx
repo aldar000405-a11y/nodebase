@@ -3,16 +3,45 @@
 import { QueryClient, QueryClientProvider, HydrationBoundary } from "@tanstack/react-query";
 import type { DehydratedState } from "@tanstack/react-query";
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
-import { createTRPCContext } from "@trpc/tanstack-react-query";
+import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";
 import { useState } from "react";
 import type { AppRouter } from "./routers/-app";
+import { makeQueryClient } from "./make-query-client";
 
-export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+let queryClient: QueryClient | undefined;
+
+function getQueryClient() {
+  if (typeof window === "undefined") {
+    return new QueryClient();
+  }
+  if (!queryClient) {
+    queryClient = new QueryClient();
+  }
+  return queryClient;
+}
 
 function getUrl() {
   if (typeof window !== "undefined") return "";
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
   return "http://localhost:3000";
+}
+
+export function useTRPC() {
+  const queryClient = getQueryClient();
+  const [trpcClient] = useState(() =>
+    createTRPCClient<AppRouter>({
+      links: [
+        httpBatchLink({
+          url: `${getUrl()}/api/trpc`,
+        }),
+      ],
+    })
+  );
+
+  return createTRPCOptionsProxy({
+    client: trpcClient,
+    queryClient: queryClient,
+  });
 }
 
 export function TRPCReactProvider({
@@ -36,9 +65,7 @@ export function TRPCReactProvider({
   return (
     <QueryClientProvider client={queryClient}>
       <HydrationBoundary state={initialState}>
-        <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
-          {children}
-        </TRPCProvider>
+        {children}
       </HydrationBoundary>
     </QueryClientProvider>
   );
