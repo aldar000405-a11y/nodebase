@@ -25,8 +25,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
-import { cn } from "@/lib/utils";
-import { Value } from "@radix-ui/react-select";
 
 const formSchema = z.object({
     email: z.string().min(1, "Email is required").email("Invalid email address"),

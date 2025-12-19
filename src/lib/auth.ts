@@ -11,7 +11,7 @@ export const auth = betterAuth({
         autoSignup: true,
         requireEmailVerification: false,
     },
-    secret: process.env.BETTER_AUTH_SECRET || "your-secret-key-change-this",
+    secret: process.env.BETTER_AUTH_SECRET,
     trustHost: true,
     });
    
