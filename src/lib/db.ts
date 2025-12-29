@@ -1,4 +1,4 @@
-import { PrismaClient } from "@/generated/prisma"; // لأنك ولدت client هنا
+import { PrismaClient } from "@prisma/client";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
@@ -7,10 +7,11 @@ const globalForPrisma = globalThis as unknown as {
 export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
-    // لا تضع أي accelerateUrl
-    log: ["query"], // اختياري: لتسجيل الاستعلامات
+    log: ["query", "error"],
   });
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+if (process.env.NODE_ENV !== "production") {
+  globalForPrisma.prisma = prisma;
+}
 
 export default prisma;
