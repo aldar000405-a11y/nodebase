@@ -1,18 +1,32 @@
 import { inngest } from "@/inngest/client";
-import { createTRPCRouter, protectedProcedure } from "../init";
-import prisma from "@/lib/db";
-import { google } from '@ai-sdk/google';
-import { generateText } from 'ai';
+import { baseProcedure, createTRPCRouter, protectedProcedure } from "../init";
+import { prisma } from "@/lib/prisma";
 
 export const appRouter = createTRPCRouter({
-  testAI: protectedProcedure.mutation(async () => {
-    const { text } = await generateText({
-  model: google('gemini-2.5-flash'),
-  prompt: 'Write a vegetarian lasagna recipe for 4 people.',
-});
+  testAI: baseProcedure.mutation(async () => {
+    try {
+      console.log("testAI mutation called - publishing event to Inngest");
+      // Send event to Inngest in background, completely non-blocking
+      setImmediate(() => {
+        inngest.send({
+          name: "execute/ai",
+          data: { 
+            prompt: "Write a vegetarian lasagna recipe for 4 people.",
+          },
+        }).then(() => {
+          console.log("Event published successfully to Inngest");
+        }).catch((err: any) => {
+          console.error("Inngest send error:", err);
+        });
+      });
 
-return text;
+      return { success: true, message: "AI execution triggered" };
+    } catch (error: any) {
+      console.error("testAI error:", error);
+      throw error;
+    }
   }),
+
   getWorkflows: protectedProcedure.query(({ ctx }) => {
     return prisma.workflow.findMany({
       where: {
@@ -26,11 +40,16 @@ return text;
       throw new Error("User email is required to create a workflow");
     }
 
-    await inngest.send({
-      name: "test/hello.world",
-      data: {
-        email: ctx.auth.user.email,
-      },
+    // Send event to Inngest in background, completely non-blocking
+    setImmediate(() => {
+      inngest.send({
+        name: "test/hello.world",
+        data: {
+          email: ctx.auth.user.email,
+        },
+      }).catch((err: any) => {
+        console.error("Inngest send error:", err);
+      });
     });
 
     return prisma.workflow.create({

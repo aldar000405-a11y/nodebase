@@ -29,14 +29,8 @@ import { authClient } from "@/lib/auth-client";
 const registerSchema = z
   .object({
     email: z.string().min(1, "Email is required").email("Invalid email address"),
-    password: z
-  .string()
-  .min(8)
-  .regex(/[A-Z]/)
-  .regex(/[a-z]/)
-  .regex(/[0-9]/),
-
-    confirmPassword: z.string().min(6, "Password must be at least 6 characters long"),
+    password: z.string().min(4, "Password must be at least 4 characters"),
+    confirmPassword: z.string().min(4, "Password must be at least 4 characters"),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",

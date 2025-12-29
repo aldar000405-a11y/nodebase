@@ -28,7 +28,7 @@ import { authClient } from "@/lib/auth-client";
 
 const formSchema = z.object({
     email: z.string().min(1, "Email is required").email("Invalid email address"),
-    password: z.string().min(8, "Password must be at least 8 characters long").regex(/[A-Z]/, "Password must contain uppercase letter").regex(/[a-z]/, "Password must contain lowercase letter").regex(/[0-9]/, "Password must contain number"),
+    password: z.string().min(4, "Password must be at least 4 characters"),
 });
 
 type LoginFormValues = z.infer<typeof formSchema>;
@@ -43,20 +43,44 @@ export function LoginForm () {
             password: "",
         },
     });
-    const onSubmit = async (values: LoginFormValues) => {
-        await authClient.signIn.email({
-            email: values.email,
-            password: values.password,
-            callbackURL: "/",
-        }, {
-            onSuccess: () => {
-                router.push("/");
-            },
-            onError: (ctx) => {
-                toast.error(ctx.error.message);
-            }
-        });
-    };
+const onSubmit = async (values: LoginFormValues) => {
+    try {
+      // Show loading toast
+      const toastId = toast.loading("Signing in...");
+      
+      const result = await authClient.signIn.email({
+        email: values.email,
+        password: values.password,
+        callbackURL: "/",
+      }, {
+        onSuccess: () => {
+          toast.dismiss(toastId);
+          toast.success("✅ Signed in successfully! Redirecting...");
+          // Add small delay to ensure session is saved before redirect
+          setTimeout(() => {
+            router.push("/");
+          }, 500);
+        },
+        onError: (ctx) => {
+          toast.dismiss(toastId);
+          console.error("Login error details:", ctx.error);
+          const errorMsg = ctx.error.message || "Authentication failed";
+          
+          // Show specific error messages
+          if (errorMsg.includes("database") || errorMsg.includes("ECONNREFUSED")) {
+            toast.error("🔴 Database connection failed. Please try again in a moment.");
+          } else if (errorMsg.includes("Invalid credentials")) {
+            toast.error("❌ Invalid email or password");
+          } else {
+            toast.error(errorMsg);
+          }
+        }
+      });
+    } catch (error) {
+      console.error("Submit error:", error);
+      toast.error("An unexpected error occurred");
+    }
+  };
         const isPending = form.formState.isSubmitting;
 
         return(
@@ -140,7 +164,7 @@ export function LoginForm () {
                                         )}
                                         />
  <Button type="submit" className="w-full" disabled={isPending}>
-  Login
+  {isPending ? "Signing in..." : "Login"}
 </Button>
 
 
