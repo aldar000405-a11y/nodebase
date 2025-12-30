@@ -15,7 +15,7 @@ export const prisma =
   });
 
 // Add connection event listeners for debugging
-prisma.$on("error", (e) => {
+prisma.$on("error" as never, (e: any) => {
   console.error("Prisma error:", e.message);
 });
 
