@@ -1,23 +1,13 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 
-export function CreateWorkflowButton() {
-  const mutation = useMutation({
-    mutationFn: async () => {
-      const res = await fetch("/api/workflows", {
-        method: "POST",
-      });
-      return res.json();
-    },
-  });
-
+export const CreateWorkflowButton = () => {
   return (
-    <button
-      onClick={() => mutation.mutate()}
-      className="px-4 py-2 bg-black text-white"
-    >
-      createWorkflow
-    </button>
+    <Button className="gap-2">
+      <Plus className="h-4 w-4" />
+      Create Workflow
+    </Button>
   );
-}
+};

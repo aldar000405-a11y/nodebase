@@ -10,16 +10,17 @@ function getInngestClient(): Inngest {
 
   inngestInstance = new Inngest({ 
     id: "nodebase",
-    eventKey: process.env.INNGEST_EVENT_KEY,
-    signingKey: process.env.INNGEST_SIGNING_KEY,
+    eventKey: process.env.INNGEST_EVENT_KEY || "local",
+    signingKey: process.env.INNGEST_SIGNING_KEY || "local",
     // Use baseUrl if available for local development
     baseUrl: process.env.INNGEST_BASE_URL || "https://inn.inngest.com",
     // Disable automatic schema registration and validation to avoid connection attempts
     dangerouslySkipSchemaValidation: true,
     // Set retry options to be more lenient
     retry: {
-      attempts: 0, // Don't retry to avoid hanging
-      initialDelayMs: 0,
+      attempts: 1,
+      initialDelayMs: 100,
+      maxDelayMs: 1000,
     },
   });
 

@@ -45,62 +45,47 @@ export function LoginForm () {
     });
 const onSubmit = async (values: LoginFormValues) => {
     try {
-      // Show loading toast
       const toastId = toast.loading("Signing in...");
       
-      const result = await authClient.signIn.email({
-        email: values.email,
+      const normalizedEmail = values.email.toLowerCase().trim();
+      
+      await authClient.signIn.email({
+        email: normalizedEmail,
         password: values.password,
-        callbackURL: "/",
-      }, {
-        onSuccess: () => {
-          toast.dismiss(toastId);
-          toast.success("✅ Signed in successfully! Redirecting...");
-          // Add small delay to ensure session is saved before redirect
-          setTimeout(() => {
-            router.push("/");
-          }, 500);
-        },
-        onError: (ctx) => {
-          toast.dismiss(toastId);
-          console.error("Login error details:", ctx.error);
-          const errorMsg = ctx.error.message || "Authentication failed";
-          
-          // Show specific error messages
-          if (errorMsg.includes("database") || errorMsg.includes("ECONNREFUSED")) {
-            toast.error("🔴 Database connection failed. Please try again in a moment.");
-          } else if (errorMsg.includes("Invalid credentials")) {
-            toast.error("❌ Invalid email or password");
-          } else {
-            toast.error(errorMsg);
-          }
-        }
       });
-    } catch (error) {
-      console.error("Submit error:", error);
-      toast.error("An unexpected error occurred");
+      
+      toast.dismiss(toastId);
+      toast.success("✅ Signed in successfully! Redirecting...");
+      setTimeout(() => {
+        router.push("/");
+      }, 500);
+    } catch (error: any) {
+      toast.dismiss(toast.loading);
+      console.error("Login error:", error);
+      const errorMessage = error?.message || "Failed to sign in";
+      toast.error(errorMessage);
     }
   };
         const isPending = form.formState.isSubmitting;
 
         return(
-            <div className="flex flex-col gap-6">
-                <Card>
-                    <CardHeader className="text-center">
-                        <CardTitle>
-                            get started
+            <div className="flex flex-col gap-6 w-full max-w-sm">
+                <Card className="w-full border border-gray-200 shadow-sm">
+                    <CardHeader className="text-center space-y-2">
+                        <CardTitle className="text-2xl font-semibold text-gray-900">
+                            Welcome back
                         </CardTitle>
-                        <CardDescription>
-                            login to continue
+                        <CardDescription className="text-gray-600">
+                            Login to continue
                         </CardDescription>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="pt-2">
                             <Form {...form}>
                                 <form  onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                                    <div className="grid gap-6">
+                                    <div className="grid gap-4">
                                         <Button
                                             variant="outline"
-                                            className="w-full"
+                                            className="w-full border border-gray-300 hover:bg-gray-50"
                                             type="button"
                                             disabled={isPending}
                                         >
@@ -110,11 +95,11 @@ const onSubmit = async (values: LoginFormValues) => {
   width={20}
   height={20}
 
-/>                                            continue with github
+/>                                            Continue with GitHub
                                         </Button>
                                         <Button
                                             variant="outline"
-                                            className="w-full"
+                                            className="w-full border border-gray-300 hover:bg-gray-50"
                                             type="button"
                                             disabled={isPending}
                                         >
@@ -125,10 +110,10 @@ const onSubmit = async (values: LoginFormValues) => {
   height={20}
 
 />
-                                            continue with google
+                                            Continue with Google
                                         </Button>
                                     </div>
-                                    <div className="grid gap-6" >
+                                    <div className="grid gap-4" >
                                         <FormField
                                         control={form.control}
                                         name="email"
@@ -169,10 +154,10 @@ const onSubmit = async (values: LoginFormValues) => {
 
 
                                     </div>
-                                    <div className="text-center text-sm mt-6">
+                                    <div className="text-center text-sm mt-4">
                                         Don't have an account?{" "}
                                         <Link href="/signup" className="underline underline-offset-4">
-                                        signup
+                                        Sign up
                                         </Link>
 
                                     </div>

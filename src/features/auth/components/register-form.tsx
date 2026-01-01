@@ -52,24 +52,27 @@ export function RegisterForm() {
   });
 
   const onSubmit = async (values: RegisterFormValues) => {
-    await authClient.signUp.email(
-        {
-            name: values.email.split("@")[0],
-            email: values.email,
-            password: values.password,
-            callbackURL: "/",
-        },
-        {
-            onSuccess: () => {
-                router.push("/");
-        },
-       onError: (ctx) => {
-  toast.error(ctx.error.message);
-}
-
+    try {
+      const toastId = toast.loading("Creating account...");
+      const normalizedEmail = values.email.toLowerCase().trim();
+      
+      await authClient.signUp.email({
+        name: normalizedEmail.split("@")[0],
+        email: normalizedEmail,
+        password: values.password,
+      });
+      
+      toast.dismiss(toastId);
+      toast.success("✅ Account created successfully! Redirecting...");
+      setTimeout(() => {
+        router.push("/");
+      }, 500);
+    } catch (error: any) {
+      toast.dismiss(toast.loading);
+      console.error("Signup error:", error);
+      const errorMessage = error?.message || "Failed to create account";
+      toast.error(errorMessage);
     }
-    )
-
   };
 
 
@@ -78,17 +81,17 @@ export function RegisterForm() {
   const isPending = form.formState.isSubmitting;
 
   return (
-    <div className="flex flex-col gap-6">
-      <Card>
-        <CardHeader className="text-center">
-          <CardTitle>Get started</CardTitle>
-          <CardDescription>create your account to get started</CardDescription>
+    <div className="flex flex-col gap-6 w-full max-w-sm">
+      <Card className="w-full border border-gray-200 shadow-sm">
+        <CardHeader className="text-center space-y-2">
+          <CardTitle className="text-2xl font-semibold text-gray-900">Create Account</CardTitle>
+          <CardDescription className="text-gray-600">Sign up to get started</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-2">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid gap-6">
-                <Button variant="outline" className="w-full" type="button" disabled={isPending}>
+              <div className="grid gap-4">
+                <Button variant="outline" className="w-full border border-gray-300 hover:bg-gray-50" type="button" disabled={isPending}>
                   <Image
                     src="/logos/github.svg"
                     alt="GitHub"
@@ -96,9 +99,9 @@ export function RegisterForm() {
                     height={20}
                   
                   />
-                  continue with github
+                  Continue with GitHub
                 </Button>
-                <Button variant="outline" className="w-full" type="button" disabled={isPending}>
+                <Button variant="outline" className="w-full border border-gray-300 hover:bg-gray-50" type="button" disabled={isPending}>
                   <Image
                     src="/logos/google.svg"
                     alt="google"
@@ -106,11 +109,11 @@ export function RegisterForm() {
                     height={20}
                   
                   />
-                  continue with google
+                  Continue with Google
                 </Button>
               </div>
 
-              <div className="grid gap-6">
+              <div className="grid gap-4">
                 <FormField
                   control={form.control}
                   name="email"
@@ -154,11 +157,11 @@ export function RegisterForm() {
                 />
 
                 <Button type="submit" className="w-full" disabled={isPending}>
-                  sign up
+                  {isPending ? "Creating account..." : "Sign up"}
                 </Button>
               </div>
 
-              <div className="text-center text-sm mt-6">
+              <div className="text-center text-sm mt-4">
                 Already have an account? {" "}
                 <Link href="/login" className="underline underline-offset-4">
                   Log in
