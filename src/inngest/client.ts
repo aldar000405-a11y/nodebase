@@ -18,9 +18,9 @@ function getInngestClient(): Inngest {
     dangerouslySkipSchemaValidation: true,
     // Set retry options to be more lenient
     retry: {
-      attempts: 1,
-      initialDelayMs: 100,
-      maxDelayMs: 1000,
+      attempts: 3,
+      initialDelayMs: 500,
+      maxDelayMs: 5000,
     },
   });
 

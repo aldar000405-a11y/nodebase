@@ -2,7 +2,8 @@
 
 import { QueryClient, QueryClientProvider, HydrationBoundary } from "@tanstack/react-query";
 import type { DehydratedState } from "@tanstack/react-query";
-import { createTRPCClient, httpBatchLink } from "@trpc/client";
+import { createTRPCProxyClient, httpBatchLink } from "@trpc/client";
+import { createTRPCReact } from "@trpc/react-query";
 import { useState } from "react";
 import type { AppRouter } from "./routers/-app";
 
@@ -14,17 +15,20 @@ function getUrl() {
   return "http://localhost:3000";
 }
 
+export const trpc = createTRPCReact<AppRouter>();
+
 let trpcClientCache: any = undefined;
 
 export function useTRPC() {
   if (!trpcClientCache) {
-    trpcClientCache = createTRPCClient<AppRouter>({
+    const client = createTRPCProxyClient<AppRouter>({
       links: [
         httpBatchLink({
           url: `${getUrl()}/api/trpc`,
         }),
       ],
     });
+    trpcClientCache = client;
   }
   return trpcClientCache;
 }

@@ -1,7 +1,13 @@
-@import "tailwindcss";
-@import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+
+
+
+
+
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @theme inline {
   --color-background: var(--background);
@@ -191,7 +197,8 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
+    outline-color: rgb(var(--ring) / 0.5);
   }
   body {
     @apply bg-background text-foreground;
@@ -208,5 +215,5 @@
 
 /* React Flow node selection styles */
 .react-flow__node.selected #base-node {
-  @apply ring-3 ring-muted-foreground/25 shadow-lg;
+  @apply ring-2 ring-gray-400/25 shadow-lg;
 }

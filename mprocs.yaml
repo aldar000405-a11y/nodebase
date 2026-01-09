@@ -1,5 +1,5 @@
 procs:
   inngest:
-    shell: npm run inngest:dev
+    shell: pnpm inngest:dev
   next:
-    shell: npm run dev
+    shell: pnpm dev

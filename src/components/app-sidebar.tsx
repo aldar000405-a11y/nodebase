@@ -21,9 +21,11 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
+    SidebarTrigger,
 } from "@/components/ui/sidebar";
 import {authClient} from "@/lib/auth-client";
 import { auth } from "@/lib/auth";
+import { useHasActiveSubscription } from "@/features/subscriptions/hooks/use-subscription";
 
 const menuItem = [
     {
@@ -51,20 +53,28 @@ const menuItem = [
 export const AppSidebar = () => {
     const pathname = usePathname();
     const router = useRouter();
+    const { hasActiveSubscription, isLoading } = useHasActiveSubscription();
     
     return(
-        <Sidebar collapsible="icon">
+        <Sidebar collapsible="icon" className="bg-slate-100 border-r-2 border-slate-300">
             <SidebarHeader>
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton asChild className="gap-x-4 h-10 px-4">
-                            <Link href="/workflows" prefetch>
-                                <Image src="/logos/logo.svg" alt="nodebase" width={30} height={30} />
-                                <span className="font-semibold text-sm">Nodebase</span>
-                            </Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </SidebarMenu>
+                <div className="flex items-center justify-between">
+                    <SidebarMenu>
+                        {!hasActiveSubscription && !isLoading && (
+
+                       
+                        <SidebarMenuItem>
+                            <SidebarMenuButton asChild className="gap-x-4 h-10 px-4">
+                                <Link href="/workflows" prefetch>
+                                    <Image src="/logos/logo.svg" alt="nodebase" width={30} height={30} />
+                                    <span className="font-semibold text-sm">Nodebase</span>
+                                </Link>
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                         )}
+                    </SidebarMenu>
+                    <SidebarTrigger />
+                </div>
             </SidebarHeader>
             <SidebarContent>
                 {menuItem.map((group) => (
@@ -98,11 +108,12 @@ export const AppSidebar = () => {
             </SidebarContent>
             <SidebarFooter>
                 <SidebarMenu>
+                    {!hasActiveSubscription && (
                     <SidebarMenuItem>
                         <SidebarMenuButton
                         tooltip="upgrade to pro"
                         className="gap-x-4 h-10 px-4"
-                        onClick={() => {}}
+                        onClick={ () =>  authClient.checkout({ slug: "pro" })}
                         
                         >
                             <StarIcon className="h-4 w-4" />
@@ -111,11 +122,12 @@ export const AppSidebar = () => {
                         </SidebarMenuButton>
                     
                     </SidebarMenuItem>
+                    )}
                     <SidebarMenuItem>
                         <SidebarMenuButton
                         tooltip="billing portal"
                         className="gap-x-4 h-10 px-4"
-                        onClick={() => {}}
+                        onClick={() => authClient.customer.portal()}
                         
                         >
                             <CreditCardIcon className="h-4 w-4" />

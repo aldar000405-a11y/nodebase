@@ -18,9 +18,9 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
 const Layout = ({ children }: { children: React.ReactNode;}) => {
     return (
-        <SidebarProvider>
+        <SidebarProvider defaultOpen={true}>
             <AppSidebar />
-            <SidebarInset>
+            <SidebarInset className="w-full overflow-auto">
                 {children}
             </SidebarInset>
 
