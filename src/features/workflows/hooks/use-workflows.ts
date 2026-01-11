@@ -1,32 +1,41 @@
 // hook to fetch all workflows using suspense
 
-import { useTRPC } from "@/trpc/client"
-import { useSuspenseQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { trpc } from "@/trpc/client"
 import { toast } from "sonner";
+import { useWorkflowsParams } from "./use-workflows-params";
+import { PAGINATION } from "@/config/constants";
+import { useMemo } from "react";
 
 export const useSuspenseWorkflows = () => {
-    const trpc = useTRPC();
-    const queryClient = useQueryClient();
-    
-    return useSuspenseQuery({
-        queryKey: ["workflows", "getMany"],
-        queryFn: () => trpc.workflows.getMany.query(),
+    const [params] = useWorkflowsParams();
+
+    const input = useMemo(
+        () => ({
+            page: params.page ?? PAGINATION.DEFAULT_PAGE,
+            pageSize: params.pageSize ?? PAGINATION.DEFAULT_PAGE_SIZE,
+            search: params.search ?? "",
+        }),
+        [params.page, params.pageSize, params.search],
+    );
+
+    const [data, query] = trpc.workflows.getMany.useSuspenseQuery(input, {
+        staleTime: 30_000,
+        refetchOnMount: false,
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
     });
+    return { ...query, data };
 };
 
 // hook to create a new workflow
 
 export const useCreateWorkflow = () => {
-    const trpc = useTRPC();
-    const queryClient = useQueryClient();
+    const utils = trpc.useUtils();
 
-    return useMutation({
-        mutationFn: () => trpc.workflows.create.mutate({}),
-        onSuccess: (data: any) => {
-            toast.success(`workflow "${data.name}" created`);
-            queryClient.invalidateQueries(
-                { queryKey: ["workflows", "getMany"] },
-            );
+    return trpc.workflows.create.useMutation({
+        onSuccess: async (data) => {
+            toast.success(`workflow "${data.name}" created successfully`);
+            await utils.workflows.getMany.invalidate();
         },
         onError: (error) => {
             toast.error(`Failed to create workflow: ${error.message}`);

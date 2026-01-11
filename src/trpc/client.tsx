@@ -43,12 +43,21 @@ export function TRPCReactProvider({
   initialState,
 }: TRPCReactProviderProps) {
   const [queryClient] = useState(() => new QueryClient());
+  const [trpcClient] = useState(() =>
+    trpc.createClient({
+      links: [
+        httpBatchLink({
+          url: `${getUrl()}/api/trpc`,
+        }),
+      ],
+    }),
+  );
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <HydrationBoundary state={initialState}>
-        {children}
-      </HydrationBoundary>
-    </QueryClientProvider>
+    <trpc.Provider client={trpcClient} queryClient={queryClient}>
+      <QueryClientProvider client={queryClient}>
+        <HydrationBoundary state={initialState}>{children}</HydrationBoundary>
+      </QueryClientProvider>
+    </trpc.Provider>
   );
 }

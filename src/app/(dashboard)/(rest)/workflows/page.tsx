@@ -4,28 +4,31 @@ import { HydrateClient } from "@/trpc/server";
 import { Suspense } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { WorkflowsContainer, workflowsList as WorkflowsList } from "@/features/workflows/components/workflows";
+import type { SearchParams } from "nuqs/server";
+import { workflowsParamsLoader } from "@/features/workflows/server/params-loader";
 
-const Page = async () => {
+
+type Props = {
+  searchParams: Promise<SearchParams>;
+}
+
+const Page = async ({searchParams}: Props) => {
   await requireAuth();
-  try {
-    await prefetchWorkflows();
-  } catch (error) {
-    // Silently fail - show empty workflows list instead
-    console.error('Failed to prefetch workflows:', error);
-  }
+  
+  const params = await workflowsParamsLoader(searchParams);
+  await prefetchWorkflows(params);
+
   
   return (
-    <WorkflowsContainer>
- <HydrateClient>
+    <HydrateClient>
       <ErrorBoundary fallback={<p>Error!</p>}>
-      <Suspense fallback={<p>Loading workflows...</p>}>
-      <WorkflowsList />
-
-      </Suspense>
-
+        <Suspense fallback={<p>Loading workflows...</p>}>
+          <WorkflowsContainer>
+            <WorkflowsList />
+          </WorkflowsContainer>
+        </Suspense>
       </ErrorBoundary>
     </HydrateClient>
-    </WorkflowsContainer>
    
   )
 };
