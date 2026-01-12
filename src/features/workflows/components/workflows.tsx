@@ -98,3 +98,7 @@ export const WorkflowsContainer = ({
         </EntityContainer>
     );
 };
+
+export const WorkflowsLoading = () => {
+    return <LoadingView entity="workflows"  />;
+};
