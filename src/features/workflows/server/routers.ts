@@ -13,6 +13,11 @@ export const workflowsRouter = createTRPCRouter({
         data: {
           name: generateSlug(3),
           userId: ctx.session!.user.id,
+          triggers: {
+            create: {
+              type: "manual",
+            },
+          },
         },
       });
     }),
@@ -79,11 +84,18 @@ export const workflowsRouter = createTRPCRouter({
           : {}),
       };
 
-      const [ items, totalCount ] = await Promise.all([
+      const [workflows, totalCount] = await Promise.all([
         prisma.workflow.findMany({
           skip:  (page - 1) * pageSize,
           take: pageSize,
           where,
+          include: {
+            _count: {
+              select: {
+                triggers: true,
+              },
+            },
+          },
           orderBy: {
             updatedAt: "desc",
           },
@@ -92,6 +104,11 @@ export const workflowsRouter = createTRPCRouter({
           where,
         }),
       ]);
+
+      const items = workflows.map(({ _count, ...workflow }) => ({
+        ...workflow,
+        triggerCount: _count.triggers,
+      }));
 
       const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
       const totalSize = items.length;

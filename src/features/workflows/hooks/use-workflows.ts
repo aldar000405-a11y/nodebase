@@ -1,6 +1,6 @@
 // hook to fetch all workflows using suspense
 
-import { trpc } from "@/trpc/client"
+import { trpc } from "@/trpc/client";
 import { toast } from "sonner";
 import { useWorkflowsParams } from "./use-workflows-params";
 import { PAGINATION } from "@/config/constants";
@@ -20,7 +20,7 @@ export const useSuspenseWorkflows = () => {
 
     const [data, query] = trpc.workflows.getMany.useSuspenseQuery(input, {
         staleTime: 30_000,
-        refetchOnMount: false,
+        refetchOnMount: "always",
         refetchOnWindowFocus: false,
         refetchOnReconnect: false,
     });
@@ -39,6 +39,22 @@ export const useCreateWorkflow = () => {
         },
         onError: (error) => {
             toast.error(`Failed to create workflow: ${error.message}`);
+        },
+    });
+};
+
+// hook to remove a workflow
+
+export const useRemoveWorkflow = () => {
+    const utils = trpc.useUtils();
+
+    return trpc.workflows.remove.useMutation({
+        onSuccess: async (data) => {
+            toast.success(`workflow "${data.name}" removed successfully`);
+            await utils.workflows.getMany.invalidate();
+        },
+        onError: (error) => {
+            toast.error(`Failed to remove workflow: ${error.message}`);
         },
     });
 };

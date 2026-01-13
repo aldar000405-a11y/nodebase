@@ -84,6 +84,22 @@ model Workflow {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  triggers Trigger[]
+
   @@index([userId])
   @@map("workflow")
+}
+
+model Trigger {
+  id   String @id @default(uuid())
+  type String
+
+  workflowId String
+  workflow   Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workflowId])
+  @@map("trigger")
 }
