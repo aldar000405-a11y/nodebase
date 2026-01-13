@@ -1,0 +1,5 @@
+procs:
+  inngest:
+    shell: pnpm inngest:dev
+  next:
+    shell: pnpm dev
