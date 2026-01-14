@@ -52,8 +52,9 @@ export function RegisterForm() {
   });
 
   const onSubmit = async (values: RegisterFormValues) => {
+    let toastId: string | number | undefined;
     try {
-      const toastId = toast.loading("Creating account...");
+      toastId = toast.loading("Creating account...");
       const normalizedEmail = values.email.toLowerCase().trim();
       
       await authClient.signUp.email({
@@ -67,10 +68,10 @@ export function RegisterForm() {
       setTimeout(() => {
         router.push("/");
       }, 500);
-    } catch (error: any) {
-      toast.dismiss(toast.loading);
+    } catch (error: unknown) {
+      if (toastId !== undefined) toast.dismiss(toastId);
       console.error("Signup error:", error);
-      const errorMessage = error?.message || "Failed to create account";
+      const errorMessage = error instanceof Error ? error.message : "Failed to create account";
       toast.error(errorMessage);
     }
   };

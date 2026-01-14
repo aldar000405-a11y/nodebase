@@ -5,7 +5,14 @@ type Input = NonNullable<inferInput<typeof trpc.workflows.getMany>>;
 
 //  prefetch all workflows
 
-export const prefetchWorkflows =  (params?: Input) => {
-    return prefetch(trpc.workflows.getMany.queryOptions(params ?? ({} as Input)));
+export const prefetchWorkflows =  (params: Input) => {
+    return prefetch(trpc.workflows.getMany.queryOptions(params));
 
-}
+};
+
+//  prefetch a single workflow
+
+export const prefetchWorkflow =  (id: string) => {
+    return prefetch(trpc.workflows.getOne.queryOptions( { id } ));
+
+};

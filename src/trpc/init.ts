@@ -1,23 +1,24 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { polarClient } from "@/lib/polar";
 import { headers } from "next/headers";
-import { cache } from "react";
 import SuperJSON from "superjson";
 
 // Initialize tRPC
 
-export const createTRPCContext = cache(async () => {
+export const createTRPCContext = async () => {
   const requestHeaders = await headers();
   const session = await auth.api.getSession({
-    headers: Object.fromEntries(requestHeaders.entries()),
+    headers: requestHeaders,
   });
 
   return {
     session,
     userId: session?.user?.id,
+    prisma,
   };
-});
+};
 
 export type TRPCContext = Awaited<ReturnType<typeof createTRPCContext>>;
 
@@ -32,7 +33,8 @@ export const createCallerFactory = t.createCallerFactory;
 
 // Protected procedure - only logged in users
 export const protectedProcedure = baseProcedure.use(async ({ ctx, next }) => {
-  if (!ctx.session?.user?.id) {
+  const userId = ctx.userId ?? ctx.session?.user?.id;
+  if (!userId) {
     throw new TRPCError({
       code: "UNAUTHORIZED",
       message: "You must be logged in to access this resource",
@@ -42,7 +44,7 @@ export const protectedProcedure = baseProcedure.use(async ({ ctx, next }) => {
   return next({
     ctx: {
       ...ctx,
-      userId: ctx.session.user.id,
+      userId,
     },
   });
 });
@@ -51,7 +53,7 @@ export const protectedProcedure = baseProcedure.use(async ({ ctx, next }) => {
 export const premiumProcedure = protectedProcedure.use(async ({ ctx, next }) => {
   try {
     const customer = await polarClient.customers.getStateExternal({
-      externalId: ctx.session!.user.id,
+      externalId: ctx.userId,
     });
 
     if (!customer.activeSubscriptions || customer.activeSubscriptions.length === 0) {
@@ -60,9 +62,9 @@ export const premiumProcedure = protectedProcedure.use(async ({ ctx, next }) => 
         message: "You must have an active subscription to access this resource",
       });
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     // If customer not found in Polar or any other error, treat as no subscription
-    if (error?.code !== "FORBIDDEN") {
+    if (!(error instanceof TRPCError) && (error as { code?: unknown } | null)?.code !== "FORBIDDEN") {
       throw new TRPCError({
         code: "FORBIDDEN",
         message: "You must have an active subscription to access this resource",

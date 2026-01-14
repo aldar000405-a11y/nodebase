@@ -1,6 +1,7 @@
 import { generateSlug } from "random-word-slugs";
 import { prisma } from "@/lib/prisma";
 import { createTRPCRouter, protectedProcedure, premiumProcedure } from "@/trpc/init";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { PAGINATION } from "@/config/constants";
 
@@ -12,7 +13,7 @@ export const workflowsRouter = createTRPCRouter({
       return prisma.workflow.create({
         data: {
           name: generateSlug(3),
-          userId: ctx.session!.user.id,
+          userId: ctx.userId,
           triggers: {
             create: {
               type: "manual",
@@ -23,36 +24,66 @@ export const workflowsRouter = createTRPCRouter({
     }),
   remove: premiumProcedure
     .input(z.object({ id: z.string() }))
-    .mutation(({ ctx, input }) => {
-      return prisma.workflow.delete({
+    .mutation(async ({ ctx, input }) => {
+      const workflow = await prisma.workflow.findFirst({
         where: {
           id: input.id,
-          userId: ctx.session!.user.id,
+          userId: ctx.userId,
         },
       });
+
+      if (!workflow) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Workflow not found",
+        });
+      }
+
+      await prisma.workflow.delete({
+        where: {
+          id: workflow.id,
+        },
+      });
+
+      return workflow;
     }),
   updateName: premiumProcedure
     .input(z.object({ id: z.string(), name: z.string().min(1) }))
-    .mutation(({ ctx, input }) => {
-      return prisma.workflow.update({
+    .mutation(async ({ ctx, input }) => {
+      const workflow = await prisma.workflow.findFirst({
         where: {
           id: input.id,
-          userId: ctx.session!.user.id,
+          userId: ctx.userId,
+        },
+      });
+
+      if (!workflow) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Workflow not found",
+        });
+      }
+
+      return prisma.workflow.update({
+        where: {
+          id: workflow.id,
         },
         data: {
           name: input.name,
         },
       });
     }),
-  getMnay: protectedProcedure
+  getOne: protectedProcedure
     .input(
-      z.object({ 
-        id: z.string() }))
+      z.object({
+        id: z.string(),
+      }),
+    )
     .query(({ ctx, input }) => {
-      return prisma.workflow.findUnique({
+      return prisma.workflow.findFirst({
         where: {
           id: input.id,
-          userId: ctx.session!.user.id,
+          userId: ctx.userId,
         },
       });
     }),
@@ -73,7 +104,7 @@ export const workflowsRouter = createTRPCRouter({
 
       const trimmedSearch = search.trim();
       const where = {
-        userId: ctx.session!.user.id,
+        userId: ctx.userId,
         ...(trimmedSearch
           ? {
               name: {

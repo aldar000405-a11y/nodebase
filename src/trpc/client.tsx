@@ -2,8 +2,9 @@
 
 import { QueryClient, QueryClientProvider, HydrationBoundary } from "@tanstack/react-query";
 import type { DehydratedState } from "@tanstack/react-query";
-import { createTRPCProxyClient, httpBatchLink } from "@trpc/client";
+import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import { createTRPCReact } from "@trpc/react-query";
+import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";
 import { useState } from "react";
 import type { AppRouter } from "./routers/-app";
 import SuperJSON from "superjson";
@@ -18,21 +19,59 @@ function getUrl() {
 
 export const trpc = createTRPCReact<AppRouter>();
 
-let trpcClientCache: any = undefined;
+function makeQueryClient() {
+  return new QueryClient();
+}
+
+let browserQueryClient: QueryClient | undefined;
+
+function getQueryClient() {
+  if (typeof window === "undefined") {
+    return makeQueryClient();
+  }
+  if (!browserQueryClient) browserQueryClient = makeQueryClient();
+  return browserQueryClient;
+}
+
+let browserTRPCClient: ReturnType<typeof createTRPCClient<AppRouter>> | undefined;
+let browserTRPCOptions: ReturnType<typeof createTRPCOptionsProxy<AppRouter>> | undefined;
+
+function getTRPCClient() {
+  const client = createTRPCClient<AppRouter>({
+    links: [
+      httpBatchLink({
+        transformer: SuperJSON,
+        url: `${getUrl()}/api/trpc`,
+      }),
+    ],
+  });
+
+  if (typeof window === "undefined") {
+    return client;
+  }
+  if (!browserTRPCClient) browserTRPCClient = client;
+  return browserTRPCClient;
+}
 
 export function useTRPC() {
-  if (!trpcClientCache) {
-    const client = createTRPCProxyClient<AppRouter>({
-      links: [
-        httpBatchLink({
-          transformer: SuperJSON,
-          url: getUrl(),
-        }),
-      ],
+  const queryClient = getQueryClient();
+  const client = getTRPCClient();
+
+  if (typeof window === "undefined") {
+    return createTRPCOptionsProxy<AppRouter>({
+      client,
+      queryClient,
     });
-    trpcClientCache = client;
   }
-  return trpcClientCache;
+
+  if (!browserTRPCOptions) {
+    browserTRPCOptions = createTRPCOptionsProxy<AppRouter>({
+      client,
+      queryClient,
+    });
+  }
+
+  return browserTRPCOptions;
 }
 
 type TRPCReactProviderProps = {
@@ -44,7 +83,7 @@ export function TRPCReactProvider({
   children,
   initialState,
 }: TRPCReactProviderProps) {
-  const [queryClient] = useState(() => new QueryClient());
+  const [queryClient] = useState(getQueryClient);
   const [trpcClient] = useState(() =>
     trpc.createClient({
       links: [

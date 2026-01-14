@@ -44,8 +44,9 @@ export function LoginForm () {
         },
     });
 const onSubmit = async (values: LoginFormValues) => {
-    try {
-      const toastId = toast.loading("Signing in...");
+        let toastId: string | number | undefined;
+        try {
+            toastId = toast.loading("Signing in...");
       
       const normalizedEmail = values.email.toLowerCase().trim();
       
@@ -54,15 +55,15 @@ const onSubmit = async (values: LoginFormValues) => {
         password: values.password,
       });
       
-      toast.dismiss(toastId);
+            toast.dismiss(toastId);
       toast.success("✅ Signed in successfully! Redirecting...");
       setTimeout(() => {
         router.push("/");
       }, 500);
-    } catch (error: any) {
-      toast.dismiss(toast.loading);
+        } catch (error: unknown) {
+            if (toastId !== undefined) toast.dismiss(toastId);
       console.error("Login error:", error);
-      const errorMessage = error?.message || "Failed to sign in";
+            const errorMessage = error instanceof Error ? error.message : "Failed to sign in";
       toast.error(errorMessage);
     }
   };
