@@ -240,7 +240,7 @@ export const EmptyView = ({
     onNew,
 }:  EmptyViewProps) => {
     return (
-        <Empty className="border border-dashed bg-white">
+        <Empty className="border bg-white">
             <EmptyHeader>
                 <EmptyMedia variant="icon">
                     <PackageOpenIcon />
@@ -309,6 +309,7 @@ type EntityItemProps = {
     onRemove?: () => void | Promise<void>;
     isRemoving?: boolean;
     className?: string;
+    onPrefetch?: () => void;
 };
 
 export const EntityItem = ({
@@ -320,6 +321,7 @@ export const EntityItem = ({
     onRemove,
     isRemoving,
     className,
+    onPrefetch,
 }: EntityItemProps) => {
 const handleRemove = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -335,7 +337,7 @@ const handleRemove = async (e: React.MouseEvent) => {
 }
 
     return (
-        <Link href={href} prefetch>
+        <Link href={href} prefetch onMouseEnter={onPrefetch}>
             <Card
             className={cn(
                 "p-4 shadow-none hover:shadow cursor-pointer",

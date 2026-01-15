@@ -17,7 +17,7 @@ import { useUpgradeModel } from "@/hooks/use-upgrade-model";
 import { useRouter } from "next/navigation";
 import { useEntitySearch } from "@/hooks/use-entity-search";
 import { useWorkflowsParams } from "../hooks/use-workflows-params";
-import type { Workflow } from "@prisma/client";
+import type { Workflow } from "@/generated/prisma";
 import { WorkflowIcon } from "lucide-react";
 import { trpc } from "@/trpc/client";
 
@@ -37,7 +37,11 @@ export const WorkflowsEmpty = () => {
                 handleError(error);
             },
             onSuccess: async (data) => {
-                await utils.workflows.getMany.invalidate();
+                // Prefetch new workflow data before navigating for instant load
+                await Promise.all([
+                    utils.workflows.getMany.invalidate(),
+                    utils.workflows.getOne.prefetch({ id: data.id })
+                ]);
                 router.push(`/workflows/${data.id}`);
             }
         });
@@ -52,7 +56,7 @@ export const WorkflowsEmpty = () => {
             <EmptyView
                 onNew={handleCreate}
                 message="You haven't created any workflows yet.
-                 Get started by creating your first workflow."
+                  Get started by creating your first workflow."
             />
         </>
     );
@@ -64,10 +68,17 @@ export const WorkflowsItem = ({
     data: WorkflowListItem
 }) => {
     const removeWorkflow = useRemoveWorkflow();
+    const utils = trpc.useUtils();
 
     const handleRemove = () => {
         removeWorkflow.mutate({ id: data.id });
     }
+
+    const handlePrefetch = () => {
+        // Prefetch workflow data on hover for faster navigation
+        utils.workflows.getOne.prefetch({ id: data.id });
+    }
+
     return (
         <EntityItem 
         href={`/workflows/${data.id}`}
@@ -87,6 +98,7 @@ export const WorkflowsItem = ({
         }
         onRemove={handleRemove}
         isRemoving={removeWorkflow.isPending}
+        onPrefetch={handlePrefetch}
         />
     )
 }
@@ -128,7 +140,11 @@ export const WorkflowsHeader = ({disabled}: {
         const handleCreate = async () => {
             try {
                 const data = await createWorkflow.mutateAsync({});
-                await utils.workflows.getMany.invalidate();
+                // Prefetch new workflow data before navigating for instant load
+                await Promise.all([
+                    utils.workflows.getMany.invalidate(),
+                    utils.workflows.getOne.prefetch({ id: data.id })
+                ]);
                 router.push(`/workflows/${data.id}`);
             } catch (error) {
                 handleError(error);
@@ -164,6 +180,36 @@ export const WorkflowsPagination = () => {
     );
 };
 
+// Shell component - no data fetching, used as outer wrapper
+export const WorkflowsShell = ({
+    children,
+}: {
+    children: React.ReactNode;
+}) => {
+    return (
+        <div className="p-4 md:px-10 md:py-6 h-full">
+            <div className="mx-auto max-w-screen-xl w-full flex flex-col gap-y-8 h-full">
+                <WorkflowsHeader />
+                <div className="gap-y-4 h-full flex flex-col">
+                    <WorkflowsSearch />
+                    {children}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// Content component - contains all data-fetching components inside Suspense
+export const WorkflowsContent = () => {
+    return (
+        <div className="flex flex-col h-full gap-y-4">
+            <WorkflowsList />
+            <WorkflowsPagination />
+        </div>
+    );
+};
+
+// Legacy container for backwards compatibility
 export const WorkflowsContainer = ({
     children,
 }: {

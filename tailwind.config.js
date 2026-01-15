@@ -40,10 +40,11 @@ module.exports = {
         chart5: 'var(--chart-5)',
       },
       borderRadius: {
-        sm: 'var(--radius-sm)',
-        md: 'var(--radius-md)',
-        lg: 'var(--radius-lg)',
-        xl: 'var(--radius-xl)',
+        sm: '0.375rem',
+        md: '0.5rem',
+        lg: '0.625rem',
+        xl: '0.75rem',
+        '2xl': '1rem',
       },
       fontFamily: {
         sans: 'var(--font-sans)',

@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { SaveIcon } from "lucide-react";
 import {
     Breadcrumb,
@@ -15,6 +16,7 @@ import type { KeyboardEvent } from "react";
 import Link  from "next/link";
 import { useSuspenseWorkflow } from "@/features/workflows/hooks/use-workflows";
 import { useUpdateWorkflowName } from "@/features/workflows/hooks/use-workflows";
+import { trpc } from "@/trpc/client";
 
 
 export const EditorSaveButton = ({ workflowId: _workflowId }: { workflowId: string }) => {
@@ -33,19 +35,20 @@ export const EditorSaveButton = ({ workflowId: _workflowId }: { workflowId: stri
 
      export const EditorNameInputs = ({ workflowId }: { workflowId: 
         string}) => {
-            const { data: workflow} = useSuspenseWorkflow(workflowId);
+            const { data: workflow } = useSuspenseWorkflow(workflowId);
             const updateWorkflow = useUpdateWorkflowName();
 
             const [isEditing, setIsEditing] = useState(false);
-            const [name, setName] = useState(workflow?.name ?? "");
+            // Only use state for the input value during editing
+            const [editingName, setEditingName] = useState("");
 
             const inputRef = useRef<HTMLInputElement>(null);
 
-            useEffect(() => {
-                if (workflow?.name) {
-                    setName(workflow.name);
-                }
-            }, [workflow?.name]);
+            // When entering edit mode, initialize with current workflow name
+            const startEditing = () => {
+                setEditingName(workflow?.name || "Untitled");
+                setIsEditing(true);
+            };
 
             useEffect(() => {
                 if (isEditing && inputRef.current) {
@@ -55,25 +58,21 @@ export const EditorSaveButton = ({ workflowId: _workflowId }: { workflowId: stri
             }, [isEditing]);
 
             const handleSave = async () => {
-                if (!workflow) {
+                const trimmedName = editingName.trim();
+                
+                // Reset if empty or unchanged
+                if (!trimmedName || trimmedName === (workflow?.name ?? "")) {
                     setIsEditing(false);
                     return;
                 }
-
-                if (name === workflow.name) {
-                    setIsEditing(false);
-                    return;
-                }
-
 
                 try {
                     await updateWorkflow.mutateAsync({
                         id: workflowId,
-                        name,
+                        name: trimmedName,
                     });
-
                 } catch {
-                    setName(workflow?.name ?? "");
+                    // Error handled by mutation hook (toast)
                 } finally {
                     setIsEditing(false);
                 }
@@ -83,7 +82,6 @@ export const EditorSaveButton = ({ workflowId: _workflowId }: { workflowId: stri
                 if (e.key === "Enter") {
                     handleSave();
                 } else if (e.key === "Escape") {
-                    setName(workflow?.name ?? "");
                     setIsEditing(false);
                 }
             };
@@ -94,8 +92,8 @@ export const EditorSaveButton = ({ workflowId: _workflowId }: { workflowId: stri
                         <Input 
                         disabled={updateWorkflow.isPending}
                         ref={inputRef}
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
+                        value={editingName}
+                        onChange={(e) => setEditingName(e.target.value)}
                         onBlur={handleSave}
                         onKeyDown={handleKeyDown}
                         className="h-7 w-[220px] max-w-[40vw] px-2 rounded-md"
@@ -104,22 +102,30 @@ export const EditorSaveButton = ({ workflowId: _workflowId }: { workflowId: stri
                 )
             }
 
+            // Display workflow.name directly from query data - no state involved
             return (
-                <BreadcrumbItem onClick={() => setIsEditing(true)} className="cursor-pointer
+                <BreadcrumbItem onClick={startEditing} className="cursor-pointer
                 hover:text-foreground transition-colors">
-                {workflow?.name ?? "Untitled"}
+                {workflow?.name || "Untitled"}
                 </BreadcrumbItem>
             )
         };
 
 export const EditorBreadcrumbs = ({ workflowId }: { workflowId:
      string }) => {
+        const utils = trpc.useUtils();
+        
+        // Prefetch workflows list on hover for faster back navigation
+        const handlePrefetch = () => {
+            utils.workflows.getMany.prefetch({ page: 1, pageSize: 5, search: "" });
+        };
+
         return (
             <Breadcrumb>
             <BreadcrumbList>
             <BreadcrumbItem>
             <BreadcrumbLink asChild>
-            <Link prefetch href="/workflows">
+            <Link prefetch href="/workflows" onMouseEnter={handlePrefetch}>
             Workflows
             </Link>
 
@@ -140,6 +146,7 @@ export const EditorHeader = ({ workflowId }: { workflowId: string }) => {
         border-b px-4 bg-background">
             <div className="flex w-full items-center justify-between gap-3">
                 <div className="flex items-center gap-2 min-w-0">
+                    <SidebarTrigger />
                     <EditorBreadcrumbs workflowId={workflowId} />
                 </div>
                 <EditorSaveButton workflowId={workflowId} />

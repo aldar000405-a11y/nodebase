@@ -9,7 +9,10 @@ export function makeQueryClient() {
   return new QueryClient({
     defaultOptions: {
       queries: {
-        staleTime: 30 * 1000,
+        staleTime: 60 * 1000, // 1 minute - data is fresh, no refetch
+        gcTime: 5 * 60 * 1000, // 5 minutes - keep in cache
+        refetchOnMount: false, // Don't refetch if data exists in cache
+        refetchOnWindowFocus: false, // Don't refetch on tab switch
       },
       dehydrate: {
         serializeData: SuperJSON.serialize,

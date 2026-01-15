@@ -1,8 +1,28 @@
 "use client";
-
+import type { ReactNode } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import {
+     ReactFlow,
+      applyNodeChanges,
+       applyEdgeChanges,
+        addEdge, 
+       type Node,
+      type  Edge,
+    type NodeChange,
+    type EdgeChange,
+    type Connection,
+    Background,
+    Controls,
+    MiniMap,
+    Panel
+    } from '@xyflow/react';
+    import { AddNodeButton } from '@/features/editor/components/add-node-button';
 import { ErrorBoundary } from "react-error-boundary";
 import { ErrorView, LoadingView } from "@/components/entity-components";
 import { useSuspenseWorkflow } from "@/features/workflows/hooks/use-workflows";
+import '@xyflow/react/dist/style.css';
+import { nodeComponents } from '@/config/node-components';
+
 
 export const EditorLoading = () => {
   return  <LoadingView message="Loading editor..."/>;
@@ -12,10 +32,12 @@ export const EditorError = ({ message }: { message?: string }) => {
         return <ErrorView message={message ?? "Error loading editor."} />;
 };
 
+
+
 export const EditorErrorBoundary = ({
     children,
 }: {
-    children: React.ReactNode;
+    children: ReactNode;
 }) => {
     return (
         <ErrorBoundary
@@ -29,9 +51,51 @@ export const EditorErrorBoundary = ({
 export const Editor = ({ workflowId }: { workflowId: string }) => {
     const { data: workflow } = useSuspenseWorkflow(workflowId);
 
+    // Initialize state directly from workflow data - useSuspenseQuery guarantees data is available
+    const [nodes, setNodes] = useState<Node[]>(() => workflow?.nodes ?? []);
+    const [edges, setEdges] = useState<Edge[]>(() => workflow?.edges ?? []);
+
+    // Only sync if workflow data changes (e.g., after refetch)
+    useEffect(() => {
+      if (workflow?.nodes) {
+        setNodes(workflow.nodes);
+      }
+      if (workflow?.edges) {
+        setEdges(workflow.edges);
+      }
+    }, [workflow?.nodes, workflow?.edges]);
+
+  const onNodesChange = useCallback(
+    (changes: NodeChange[]) => setNodes((nodesSnapshot) => applyNodeChanges(changes, nodesSnapshot)),
+    [],
+  );
+  const onEdgesChange = useCallback(
+    (changes: EdgeChange[]) => setEdges((edgesSnapshot) => applyEdgeChanges(changes, edgesSnapshot)),
+    [],
+  );
+  const onConnect = useCallback(
+    (params: Connection) => setEdges((edgesSnapshot) => addEdge(params, edgesSnapshot)),
+    [],
+  );
+
     return (
-        <pre className="whitespace-pre-wrap break-words">
-            {JSON.stringify(workflow, null, 2)}
-        </pre>
+        <div className="size-full">
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            nodeTypes={nodeComponents}
+            fitView
+          >
+            <Background />
+            <Controls />
+            <MiniMap />
+            <Panel position="top-right">
+              <AddNodeButton />
+            </Panel>
+            </ReactFlow>
+        </div>
     );
 };

@@ -54,14 +54,15 @@ export const AppSidebar = () => {
 						<SidebarMenuItem>
 							<SidebarMenuButton
 								asChild
-								className="gap-x-3 h-10 px-3 mx-1 rounded-md"
+								className="gap-x-3 h-10 px-3"
 							>
 								<Link href="/workflows" prefetch>
 									<Image
 										src="/logos/logo.svg"
 										alt="nodebase"
-										width={28}
-										height={28}
+										width={20}
+										height={20}
+										className="shrink-0 min-w-[20px] min-h-[20px]"
 									/>
 									<span className="font-semibold text-sm">Nodebase</span>
 								</Link>
@@ -74,7 +75,7 @@ export const AppSidebar = () => {
 			<SidebarContent>
 				{menuItem.map((group) => (
 					<SidebarGroup key={group.title}>
-						<SidebarGroupLabel>{group.title}</SidebarGroupLabel>
+						<SidebarGroupLabel className="hidden">{group.title}</SidebarGroupLabel>
 						<SidebarGroupContent>
 							<SidebarMenu>
 								{group.items.map((item) => (
@@ -87,7 +88,7 @@ export const AppSidebar = () => {
 													: pathname.startsWith(item.url)
 											}
 											asChild
-											className="sidebar-menu-item mx-1 rounded-md"
+											className="sidebar-menu-item"
 										>
 											<Link href={item.url} prefetch>
 												<item.icon className="h-4 w-4" />
@@ -108,7 +109,7 @@ export const AppSidebar = () => {
 						<SidebarMenuItem>
 							<SidebarMenuButton
 								tooltip="upgrade to pro"
-								className="gap-x-4 h-10 px-4 mx-1 rounded-md"
+								className="gap-x-4 h-10 px-4"
 								onClick={() => authClient.checkout({ slug: "pro" })}
 							>
 								<StarIcon className="h-4 w-4" />
@@ -120,18 +121,18 @@ export const AppSidebar = () => {
 					<SidebarMenuItem>
 						<SidebarMenuButton
 							tooltip="billing portal"
-							className="gap-x-4 h-10 px-4 mx-1 rounded-md"
-							onClick={() => authClient.customer.portal()}
-						>
-							<CreditCardIcon className="h-4 w-4" />
-							<span>Billing portal</span>
-						</SidebarMenuButton>
-					</SidebarMenuItem>
+						className="gap-x-4 h-10 px-4"
+						onClick={() => authClient.customer.portal()}
+					>
+						<CreditCardIcon className="h-4 w-4" />
+						<span>Billing portal</span>
+					</SidebarMenuButton>
+				</SidebarMenuItem>
 
-					<SidebarMenuItem>
-						<SidebarMenuButton
-							tooltip="sign out"
-							className="gap-x-4 h-10 px-4 mx-1 rounded-md bg-gray-200 hover:bg-gray-300 text-gray-700"
+				<SidebarMenuItem>
+					<SidebarMenuButton
+						tooltip="sign out"
+						className="gap-x-4 h-10 px-4 bg-gray-200 hover:bg-gray-300 text-gray-700"
 							onClick={async () => {
 								await authClient.signOut({
 									fetchOptions: {

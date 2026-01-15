@@ -2,7 +2,9 @@ import { generateSlug } from "random-word-slugs";
 import { prisma } from "@/lib/prisma";
 import { createTRPCRouter, protectedProcedure, premiumProcedure } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
-import { z } from "zod";
+import  z from "zod";
+import { NodeType } from "@/generated/prisma";
+import type { Node, Edge } from "@xyflow/react";
 import { PAGINATION } from "@/config/constants";
 
 
@@ -14,9 +16,11 @@ export const workflowsRouter = createTRPCRouter({
         data: {
           name: generateSlug(3),
           userId: ctx.userId,
-          triggers: {
+          nodes: {
             create: {
-              type: "manual",
+              type: NodeType.INITIAL,
+              position: {x: 0, y: 0 },
+              name: NodeType.INITIAL,
             },
           },
         },
@@ -25,12 +29,26 @@ export const workflowsRouter = createTRPCRouter({
   remove: premiumProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const workflow = await prisma.workflow.findFirst({
-        where: {
-          id: input.id,
-          userId: ctx.userId,
-        },
-      });
+      const workflow =
+        (await prisma.workflow.findFirst({
+          where: {
+            id: input.id,
+            userId: ctx.userId,
+          },
+        })) ??
+        (await prisma.trigger
+          .findFirst({
+            where: {
+              id: input.id,
+              workflow: {
+                userId: ctx.userId,
+              },
+            },
+            include: {
+              workflow: true,
+            },
+          })
+          .then((t) => t?.workflow ?? null));
 
       if (!workflow) {
         throw new TRPCError({
@@ -50,12 +68,26 @@ export const workflowsRouter = createTRPCRouter({
   updateName: premiumProcedure
     .input(z.object({ id: z.string(), name: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
-      const workflow = await prisma.workflow.findFirst({
-        where: {
-          id: input.id,
-          userId: ctx.userId,
-        },
-      });
+      const workflow =
+        (await prisma.workflow.findFirst({
+          where: {
+            id: input.id,
+            userId: ctx.userId,
+          },
+        })) ??
+        (await prisma.trigger
+          .findFirst({
+            where: {
+              id: input.id,
+              workflow: {
+                userId: ctx.userId,
+              },
+            },
+            include: {
+              workflow: true,
+            },
+          })
+          .then((t) => t?.workflow ?? null));
 
       if (!workflow) {
         throw new TRPCError({
@@ -76,16 +108,38 @@ export const workflowsRouter = createTRPCRouter({
   getOne: protectedProcedure
     .input(
       z.object({
-        id: z.string(),
-      }),
-    )
-    .query(({ ctx, input }) => {
-      return prisma.workflow.findFirst({
+        id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const workflow = await prisma.workflow.findUniqueOrThrow({
         where: {
           id: input.id,
           userId: ctx.userId,
         },
+        include: {nodes: true, connections: true },
       });
+
+      // Transforming server nodes to react-flow compatible nodes
+      const nodes: Node[] = workflow.nodes.map((node) => ({
+        id: node.id,
+        type: node.type,
+        position: node.position as { x: number; y: number },
+        data: (node.data as Record<string, unknown>) || {},
+      }));
+
+      const edges: Edge[] = workflow.connections.map((connection) => ({
+        id: connection.id,
+        source: connection.fromNodeId,
+        target: connection.toNodeId,
+        sourceHandle: connection.fromOutput,
+        targetHandle: connection.toInput,
+      }));
+
+      return {
+        id: workflow.id,
+        name: workflow.name,
+        nodes,
+        edges,
+      };
     }),
   getMany: protectedProcedure
   .input(
@@ -157,7 +211,6 @@ export const workflowsRouter = createTRPCRouter({
         hasPreviousPage
 
       }
-
     
      
       }),

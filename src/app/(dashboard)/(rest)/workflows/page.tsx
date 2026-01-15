@@ -3,10 +3,10 @@ import { requireAuth } from "@/lib/auth-utils";
 import { HydrateClient } from "@/trpc/server";
 import { Suspense } from "react";
 import {
-  WorkflowsContainer,
+  WorkflowsContent,
   WorkflowsErrorBoundary,
-  WorkflowsList,
   WorkflowsLoading,
+  WorkflowsShell,
 } from "@/features/workflows/components/workflows";
 import type { SearchParams } from "nuqs/server";
 import { workflowsParamsLoader } from "@/features/workflows/server/params-loader";
@@ -27,21 +27,21 @@ const Page = async ({ searchParams }: Props) => {
     process.env.NEXT_PUBLIC_DEBUG_BYPASS_WORKFLOWS_ERROR_BOUNDARY === "1";
 
   return (
-    <WorkflowsContainer>
+    <WorkflowsShell>
       <HydrateClient>
         {bypassBoundary ? (
           <Suspense fallback={<WorkflowsLoading />}>
-            <WorkflowsList />
+            <WorkflowsContent />
           </Suspense>
         ) : (
           <WorkflowsErrorBoundary>
             <Suspense fallback={<WorkflowsLoading />}>
-              <WorkflowsList />
+              <WorkflowsContent />
             </Suspense>
           </WorkflowsErrorBoundary>
         )}
       </HydrateClient>
-    </WorkflowsContainer>
+    </WorkflowsShell>
   );
 };
 
