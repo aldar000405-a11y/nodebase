@@ -18,8 +18,9 @@ import { useRouter } from "next/navigation";
 import { useEntitySearch } from "@/hooks/use-entity-search";
 import { useWorkflowsParams } from "../hooks/use-workflows-params";
 import type { Workflow } from "@/generated/prisma";
-import { WorkflowIcon } from "lucide-react";
+import { Loader2Icon, WorkflowIcon } from "lucide-react";
 import { trpc } from "@/trpc/client";
+import { useTransition } from "react";
 
 type WorkflowListItem = Workflow & {
     triggerCount: number;
@@ -31,18 +32,24 @@ export const WorkflowsEmpty = () => {
     const utils = trpc.useUtils();
     const createWorkflow = useCreateWorkflow();
     const { handleError, model } = useUpgradeModel();
+    const [isPending, startTransition] = useTransition();
+    
     const handleCreate = () => {
+        // Prevent double-click
+        if (createWorkflow.isPending || isPending) return;
+        
         createWorkflow.mutate({}, {
             onError: (error) => {
                 handleError(error);
             },
             onSuccess: async (data) => {
                 // Prefetch new workflow data before navigating for instant load
-                await Promise.all([
-                    utils.workflows.getMany.invalidate(),
-                    utils.workflows.getOne.prefetch({ id: data.id })
-                ]);
-                router.push(`/workflows/${data.id}`);
+                await utils.workflows.getOne.prefetch({ id: data.id });
+                startTransition(() => {
+                    router.push(`/workflows/${data.id}`);
+                });
+                // Invalidate after navigation started
+                utils.workflows.getMany.invalidate();
             }
         });
     };
@@ -69,6 +76,8 @@ export const WorkflowsItem = ({
 }) => {
     const removeWorkflow = useRemoveWorkflow();
     const utils = trpc.useUtils();
+    const router = useRouter();
+    const [isNavigating, startTransition] = useTransition();
 
     const handleRemove = () => {
         removeWorkflow.mutate({ id: data.id });
@@ -77,6 +86,16 @@ export const WorkflowsItem = ({
     const handlePrefetch = () => {
         // Prefetch workflow data on hover for faster navigation
         utils.workflows.getOne.prefetch({ id: data.id });
+    }
+    
+    const handleClick = (e: React.MouseEvent) => {
+        e.preventDefault();
+        // Prevent double-click
+        if (isNavigating) return;
+        
+        startTransition(() => {
+            router.push(`/workflows/${data.id}`);
+        });
     }
 
     return (
@@ -92,10 +111,15 @@ export const WorkflowsItem = ({
         }
         image={
             <div className="size-8 flex items-center justify-center">
-                <WorkflowIcon className="size-5 text-muted-foreground"/>
-
+                {isNavigating ? (
+                    <Loader2Icon className="size-5 text-muted-foreground animate-spin"/>
+                ) : (
+                    <WorkflowIcon className="size-5 text-muted-foreground"/>
+                )}
             </div>
         }
+        onClick={handleClick}
+        isNavigating={isNavigating}
         onRemove={handleRemove}
         isRemoving={removeWorkflow.isPending}
         onPrefetch={handlePrefetch}
@@ -137,15 +161,21 @@ export const WorkflowsHeader = ({disabled}: {
         const router = useRouter();
         const utils = trpc.useUtils();
         const { handleError, model } = useUpgradeModel();
+        const [isPending, startTransition] = useTransition();
+        
         const handleCreate = async () => {
+            // Prevent double-click
+            if (createWorkflow.isPending || isPending) return;
+            
             try {
                 const data = await createWorkflow.mutateAsync({});
                 // Prefetch new workflow data before navigating for instant load
-                await Promise.all([
-                    utils.workflows.getMany.invalidate(),
-                    utils.workflows.getOne.prefetch({ id: data.id })
-                ]);
-                router.push(`/workflows/${data.id}`);
+                await utils.workflows.getOne.prefetch({ id: data.id });
+                startTransition(() => {
+                    router.push(`/workflows/${data.id}`);
+                });
+                // Invalidate after navigation started
+                utils.workflows.getMany.invalidate();
             } catch (error) {
                 handleError(error);
             }

@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/sidebar";
 import { authClient } from "@/lib/auth-client";
 import { useHasActiveSubscription } from "@/features/subscriptions/hooks/use-subscription";
+import { trpc } from "@/trpc/client";
 
 const menuItem = [
 	{
@@ -42,6 +43,14 @@ export const AppSidebar = () => {
 	const pathname = usePathname();
 	const router = useRouter();
 	const { hasActiveSubscription } = useHasActiveSubscription();
+	const utils = trpc.useUtils();
+
+	// Prefetch workflows data on hover for faster navigation
+	const handlePrefetch = (url: string) => {
+		if (url === "/workflows") {
+			utils.workflows.getMany.prefetch({ page: 1, pageSize: 5, search: "" });
+		}
+	};
 
 	return (
 		<Sidebar
@@ -90,7 +99,11 @@ export const AppSidebar = () => {
 											asChild
 											className="sidebar-menu-item"
 										>
-											<Link href={item.url} prefetch>
+											<Link 
+												href={item.url} 
+												prefetch
+												onMouseEnter={() => handlePrefetch(item.url)}
+											>
 												<item.icon className="h-4 w-4" />
 												<span>{item.title}</span>
 											</Link>

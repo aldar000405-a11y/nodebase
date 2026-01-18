@@ -310,6 +310,8 @@ type EntityItemProps = {
     isRemoving?: boolean;
     className?: string;
     onPrefetch?: () => void;
+    onClick?: (e: React.MouseEvent) => void;
+    isNavigating?: boolean;
 };
 
 export const EntityItem = ({
@@ -322,6 +324,8 @@ export const EntityItem = ({
     isRemoving,
     className,
     onPrefetch,
+    onClick,
+    isNavigating,
 }: EntityItemProps) => {
 const handleRemove = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -337,11 +341,11 @@ const handleRemove = async (e: React.MouseEvent) => {
 }
 
     return (
-        <Link href={href} prefetch onMouseEnter={onPrefetch}>
+        <Link href={href} prefetch onMouseEnter={onPrefetch} onClick={onClick}>
             <Card
             className={cn(
-                "p-4 shadow-none hover:shadow cursor-pointer",
-                isRemoving && "opacity-50 cursor-not-allowed",
+                "p-4 shadow-none hover:shadow cursor-pointer transition-all",
+                (isRemoving || isNavigating) && "opacity-50 cursor-not-allowed",
                 className,
             )}
             >

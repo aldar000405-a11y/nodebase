@@ -11,12 +11,14 @@ import {
     BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Input } from "@/components/ui/input";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import type { KeyboardEvent } from "react";
 import Link  from "next/link";
 import { useSuspenseWorkflow } from "@/features/workflows/hooks/use-workflows";
 import { useUpdateWorkflowName } from "@/features/workflows/hooks/use-workflows";
 import { trpc } from "@/trpc/client";
+import { useRouter } from "next/navigation";
+import { Loader2Icon } from "lucide-react";
 
 
 export const EditorSaveButton = ({ workflowId: _workflowId }: { workflowId: string }) => {
@@ -114,10 +116,22 @@ export const EditorSaveButton = ({ workflowId: _workflowId }: { workflowId: stri
 export const EditorBreadcrumbs = ({ workflowId }: { workflowId:
      string }) => {
         const utils = trpc.useUtils();
+        const router = useRouter();
+        const [isNavigating, startTransition] = useTransition();
         
         // Prefetch workflows list on hover for faster back navigation
         const handlePrefetch = () => {
             utils.workflows.getMany.prefetch({ page: 1, pageSize: 5, search: "" });
+        };
+        
+        const handleClick = (e: React.MouseEvent) => {
+            e.preventDefault();
+            // Prevent double-click
+            if (isNavigating) return;
+            
+            startTransition(() => {
+                router.push("/workflows");
+            });
         };
 
         return (
@@ -125,8 +139,21 @@ export const EditorBreadcrumbs = ({ workflowId }: { workflowId:
             <BreadcrumbList>
             <BreadcrumbItem>
             <BreadcrumbLink asChild>
-            <Link prefetch href="/workflows" onMouseEnter={handlePrefetch}>
-            Workflows
+            <Link 
+                prefetch 
+                href="/workflows" 
+                onMouseEnter={handlePrefetch}
+                onClick={handleClick}
+                className={isNavigating ? "opacity-50 pointer-events-none" : ""}
+            >
+                {isNavigating ? (
+                    <span className="flex items-center gap-1">
+                        <Loader2Icon className="size-3 animate-spin" />
+                        Workflows
+                    </span>
+                ) : (
+                    "Workflows"
+                )}
             </Link>
 
             </BreadcrumbLink>
