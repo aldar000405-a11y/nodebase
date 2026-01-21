@@ -7,7 +7,8 @@ import {
     EditorErrorBoundary,
     EditorLoading
     } from "@/features/editor/components/editor";
-import { EditorHeader } from "@/features/editor/components/editor-header";
+import { EditorHeader, EditorHeaderLoading } from "@/features/editor/components/editor-header";
+
 interface PageProps {
     params: Promise<{ workflowId: string }>;
 }
@@ -20,12 +21,14 @@ const Page = async ({params}: PageProps) => {
     return (
         <HydrateClient>
             <EditorErrorBoundary>
-                <Suspense fallback={<EditorLoading />}>
+                <Suspense fallback={<EditorHeaderLoading />}>
                     <EditorHeader workflowId={workflowId} />
-                    <main className="flex-1">
-                        <Editor workflowId={workflowId} />
-                    </main>
                 </Suspense>
+                <main className="flex-1">
+                    <Suspense fallback={<EditorLoading />}>
+                        <Editor workflowId={workflowId} />
+                    </Suspense>
+                </main>
             </EditorErrorBoundary>
         </HydrateClient>
     )

@@ -1,7 +1,6 @@
 "use client";
 
-import { QueryClient, QueryClientProvider, HydrationBoundary } from "@tanstack/react-query";
-import type { DehydratedState } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import { createTRPCReact } from "@trpc/react-query";
 import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";
@@ -20,7 +19,19 @@ function getUrl() {
 export const trpc = createTRPCReact<AppRouter>();
 
 function makeQueryClient() {
-  return new QueryClient();
+  return new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 60 * 1000, // 1 minute - data is fresh, no refetch
+        gcTime: 5 * 60 * 1000, // 5 minutes - keep in cache
+        refetchOnMount: false, // Don't refetch if data exists in cache
+        refetchOnWindowFocus: false, // Don't refetch on tab switch
+      },
+      hydrate: {
+        deserializeData: SuperJSON.deserialize,
+      },
+    },
+  });
 }
 
 let browserQueryClient: QueryClient | undefined;
@@ -76,12 +87,10 @@ export function useTRPC() {
 
 type TRPCReactProviderProps = {
   children: React.ReactNode;
-  initialState?: DehydratedState | null | undefined;
 };
 
 export function TRPCReactProvider({
   children,
-  initialState,
 }: TRPCReactProviderProps) {
   const [queryClient] = useState(getQueryClient);
   const [trpcClient] = useState(() =>
@@ -98,7 +107,7 @@ export function TRPCReactProvider({
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
-        <HydrationBoundary state={initialState}>{children}</HydrationBoundary>
+        {children}
       </QueryClientProvider>
     </trpc.Provider>
   );

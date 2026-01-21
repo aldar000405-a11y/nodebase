@@ -14,24 +14,46 @@ import { Input } from "@/components/ui/input";
 import { useEffect, useRef, useState, useTransition } from "react";
 import type { KeyboardEvent } from "react";
 import Link  from "next/link";
-import { useSuspenseWorkflow } from "@/features/workflows/hooks/use-workflows";
-import { useUpdateWorkflowName } from "@/features/workflows/hooks/use-workflows";
+import { useSuspenseWorkflow, useUpdateWorkflow, useUpdateWorkflowName } from "@/features/workflows/hooks/use-workflows";
 import { trpc } from "@/trpc/client";
 import { useRouter } from "next/navigation";
 import { Loader2Icon } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useAtomValue } from "jotai";
+import { editorAtom } from "../store/atoms";
 
 
-export const EditorSaveButton = ({ workflowId: _workflowId }: { workflowId: string }) => {
+export const EditorSaveButton = ({ workflowId }: { workflowId: string }) => {
+    const editor = useAtomValue(editorAtom);
+    const saveWorkflow = useUpdateWorkflow();
+    
+    const handleSave = () => {
+        if (!editor) {
+            return;
+        }
+
+        const nodes = editor.getNodes();
+        const edges = editor.getEdges();
+
+        saveWorkflow.mutate({
+            id: workflowId,
+            nodes,
+            edges,
+        });
+    }
         return (
+            <div className="ml-auto">
             <Button
                 size="sm"
-                className="rounded-md gap-2"
-                onClick={() => {}}
-                disabled={false}
+                onClick={handleSave}
+                disabled={saveWorkflow.
+                    isPending
+                }
             >
                     <SaveIcon className="size-4"/>
                     Save
             </Button>
+            </div>
         )
      };
 
@@ -40,17 +62,29 @@ export const EditorSaveButton = ({ workflowId: _workflowId }: { workflowId: stri
             const { data: workflow } = useSuspenseWorkflow(workflowId);
             const updateWorkflow = useUpdateWorkflowName();
 
+            // Prevent name flicker during refetch/save by keeping a local optimistic value.
+            const [optimisticName, setOptimisticName] = useState<string | null>(null);
+
             const [isEditing, setIsEditing] = useState(false);
             // Only use state for the input value during editing
             const [editingName, setEditingName] = useState("");
+
+            const displayName = optimisticName ?? workflow?.name ?? "Untitled";
 
             const inputRef = useRef<HTMLInputElement>(null);
 
             // When entering edit mode, initialize with current workflow name
             const startEditing = () => {
-                setEditingName(workflow?.name || "Untitled");
+                setEditingName(displayName);
                 setIsEditing(true);
             };
+
+            // If server data catches up, clear optimistic name.
+            useEffect(() => {
+                if (optimisticName && workflow?.name === optimisticName) {
+                    setOptimisticName(null);
+                }
+            }, [optimisticName, workflow?.name]);
 
             useEffect(() => {
                 if (isEditing && inputRef.current) {
@@ -63,17 +97,22 @@ export const EditorSaveButton = ({ workflowId: _workflowId }: { workflowId: stri
                 const trimmedName = editingName.trim();
                 
                 // Reset if empty or unchanged
-                if (!trimmedName || trimmedName === (workflow?.name ?? "")) {
+                const currentName = optimisticName ?? (workflow?.name ?? "");
+                if (!trimmedName || trimmedName === currentName) {
                     setIsEditing(false);
                     return;
                 }
 
                 try {
+                    // Update UI immediately; this avoids flashes to an older cached name.
+                    setOptimisticName(trimmedName);
                     await updateWorkflow.mutateAsync({
                         id: workflowId,
                         name: trimmedName,
                     });
                 } catch {
+                    // If mutation fails, fall back to server value.
+                    setOptimisticName(null);
                     // Error handled by mutation hook (toast)
                 } finally {
                     setIsEditing(false);
@@ -108,7 +147,7 @@ export const EditorSaveButton = ({ workflowId: _workflowId }: { workflowId: stri
             return (
                 <BreadcrumbItem onClick={startEditing} className="cursor-pointer
                 hover:text-foreground transition-colors">
-                {workflow?.name || "Untitled"}
+                {displayName}
                 </BreadcrumbItem>
             )
         };
@@ -165,6 +204,25 @@ export const EditorBreadcrumbs = ({ workflowId }: { workflowId:
           
         )
      };
+
+// Loading skeleton for the header
+export const EditorHeaderLoading = () => {
+    return (
+        <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4 bg-background">
+            <div className="flex w-full items-center justify-between gap-3">
+                <div className="flex items-center gap-2 min-w-0">
+                    <Skeleton className="size-6" />
+                    <div className="flex items-center gap-2">
+                        <Skeleton className="h-4 w-20" />
+                        <span className="text-muted-foreground">/</span>
+                        <Skeleton className="h-4 w-32" />
+                    </div>
+                </div>
+                <Skeleton className="h-8 w-16" />
+            </div>
+        </header>
+    );
+};
 
 export const EditorHeader = ({ workflowId }: { workflowId: string }) => {  
     return (

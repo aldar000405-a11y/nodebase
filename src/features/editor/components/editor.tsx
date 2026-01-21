@@ -1,6 +1,6 @@
 "use client";
 import type { ReactNode } from 'react';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import {
      ReactFlow,
       applyNodeChanges,
@@ -16,12 +16,14 @@ import {
     MiniMap,
     Panel
     } from '@xyflow/react';
-    import { AddNodeButton } from '@/features/editor/components/add-node-button';
+import { useSetAtom } from 'jotai';
+import { AddNodeButton } from '@/features/editor/components/add-node-button';
 import { ErrorBoundary } from "react-error-boundary";
 import { ErrorView, LoadingView } from "@/components/entity-components";
 import { useSuspenseWorkflow } from "@/features/workflows/hooks/use-workflows";
 import '@xyflow/react/dist/style.css';
 import { nodeComponents } from '@/config/node-components';
+import { editorAtom } from "../store/atoms";
 
 
 export const EditorLoading = () => {
@@ -51,19 +53,10 @@ export const EditorErrorBoundary = ({
 export const Editor = ({ workflowId }: { workflowId: string }) => {
     const { data: workflow } = useSuspenseWorkflow(workflowId);
 
-    // Initialize state directly from workflow data - useSuspenseQuery guarantees data is available
-    const [nodes, setNodes] = useState<Node[]>(() => workflow?.nodes ?? []);
-    const [edges, setEdges] = useState<Edge[]>(() => workflow?.edges ?? []);
+    const setEditor = useSetAtom(editorAtom);
 
-    // Only sync if workflow data changes (e.g., after refetch)
-    useEffect(() => {
-      if (workflow?.nodes) {
-        setNodes(workflow.nodes);
-      }
-      if (workflow?.edges) {
-        setEdges(workflow.edges);
-      }
-    }, [workflow?.nodes, workflow?.edges]);
+    const [nodes, setNodes] = useState<Node[]>(workflow.nodes);
+    const [edges, setEdges] = useState<Edge[]>(workflow.edges);
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => setNodes((nodesSnapshot) => applyNodeChanges(changes, nodesSnapshot)),
@@ -87,7 +80,13 @@ export const Editor = ({ workflowId }: { workflowId: string }) => {
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
             nodeTypes={nodeComponents}
+            onInit={setEditor}
             fitView
+            snapGrid={[10, 10]}
+            snapToGrid
+            panOnScroll
+            panOnDrag={false}
+            selectionOnDrag
           >
             <Background />
             <Controls />

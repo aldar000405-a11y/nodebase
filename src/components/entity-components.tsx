@@ -1,4 +1,4 @@
-import * as React from "react";
+import type * as React from "react";
 
 import Link from "next/link";
 
@@ -69,7 +69,11 @@ export const EntityHeader = ({
                 size='sm' 
                 onClick={onNew}
                 >
-                    <PlusIcon className="size-4"/>
+                    {isCreating ? (
+                        <Loader2Icon className="size-4 animate-spin" />
+                    ) : (
+                        <PlusIcon className="size-4" />
+                    )}
                     {newButtonLabel}
                 </Button>
             )}

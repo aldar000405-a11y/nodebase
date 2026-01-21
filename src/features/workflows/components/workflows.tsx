@@ -1,24 +1,23 @@
 "use client";
 import { ErrorBoundary } from "react-error-boundary";
 import { formatDistanceToNow } from "date-fns";
-import { 
+import {
     EmptyView,
-    EntityContainer, 
-    EntityHeader, 
-    EntityList, 
+    EntityContainer,
+    EntityHeader,
     EntityItem,
-    EntityPagination, 
-    EntitySearch, 
-    ErrorView, 
-    LoadingView
+    EntityPagination,
+    EntitySearch,
+    ErrorView,
 } from "@/components/entity-components";
-import { useCreateWorkflow, useRemoveWorkflow, useSuspenseWorkflows } from "../hooks/use-workflows";
-import { useUpgradeModel } from "@/hooks/use-upgrade-model";
+import { useRemoveWorkflow, useSuspenseWorkflows } from "../hooks/use-workflows";
 import { useRouter } from "next/navigation";
 import { useEntitySearch } from "@/hooks/use-entity-search";
 import { useWorkflowsParams } from "../hooks/use-workflows-params";
 import type { Workflow } from "@/generated/prisma";
 import { Loader2Icon, WorkflowIcon } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent } from "@/components/ui/card";
 import { trpc } from "@/trpc/client";
 import { useTransition } from "react";
 
@@ -29,28 +28,12 @@ type WorkflowListItem = Workflow & {
 
 export const WorkflowsEmpty = () => {
     const router = useRouter();
-    const utils = trpc.useUtils();
-    const createWorkflow = useCreateWorkflow();
-    const { handleError, model } = useUpgradeModel();
     const [isPending, startTransition] = useTransition();
     
     const handleCreate = () => {
-        // Prevent double-click
-        if (createWorkflow.isPending || isPending) return;
-        
-        createWorkflow.mutate({}, {
-            onError: (error) => {
-                handleError(error);
-            },
-            onSuccess: async (data) => {
-                // Prefetch new workflow data before navigating for instant load
-                await utils.workflows.getOne.prefetch({ id: data.id });
-                startTransition(() => {
-                    router.push(`/workflows/${data.id}`);
-                });
-                // Invalidate after navigation started
-                utils.workflows.getMany.invalidate();
-            }
+        if (isPending) return;
+        startTransition(() => {
+            router.push("/workflows/new");
         });
     };
 
@@ -58,14 +41,11 @@ export const WorkflowsEmpty = () => {
     
 
     return (
-        <>
-            {model}
-            <EmptyView
-                onNew={handleCreate}
-                message="You haven't created any workflows yet.
-                  Get started by creating your first workflow."
-            />
-        </>
+        <EmptyView
+            onNew={handleCreate}
+            message="You haven't created any workflows yet.
+              Get started by creating your first workflow."
+        />
     );
 };
 
@@ -85,13 +65,16 @@ export const WorkflowsItem = ({
 
     const handlePrefetch = () => {
         // Prefetch workflow data on hover for faster navigation
-        utils.workflows.getOne.prefetch({ id: data.id });
+        void utils.workflows.getOne.prefetch({ id: data.id });
     }
     
     const handleClick = (e: React.MouseEvent) => {
         e.preventDefault();
         // Prevent double-click
         if (isNavigating) return;
+        
+        // Ensure data is prefetched before navigation
+        void utils.workflows.getOne.prefetch({ id: data.id });
         
         startTransition(() => {
             router.push(`/workflows/${data.id}`);
@@ -145,54 +128,51 @@ export const WorkflowsSearch = () => {
 
 export const WorkflowsList = () => {
     const workflows = useSuspenseWorkflows();
+    const items = workflows.data.items ?? [];
+    
+    // Only show empty view if we're certain there are no items (not during loading)
+    if (items.length === 0) {
+        return (
+            <div className="flex-1 flex justify-center items-center">
+                <div className="max-w-sm mx-auto">
+                    <WorkflowsEmpty />
+                </div>
+            </div>
+        );
+    }
+    
     return (
-        <EntityList 
-        items={workflows.data.items ?? []}
-        getKey={(workflow) => workflow.id}
-        renderItem={(workflow) => <WorkflowsItem data={workflow as WorkflowListItem} />}
-        emptyView={<WorkflowsEmpty />} 
-        />
-    )
+        <div className="flex flex-col gap-y-4">
+            {items.map((workflow) => (
+                <div key={workflow.id}>
+                    <WorkflowsItem data={workflow as WorkflowListItem} />
+                </div>
+            ))}
+        </div>
+    );
 };
 
 export const WorkflowsHeader = ({disabled}: {
     disabled?: boolean}) => {
-        const createWorkflow = useCreateWorkflow();
         const router = useRouter();
-        const utils = trpc.useUtils();
-        const { handleError, model } = useUpgradeModel();
         const [isPending, startTransition] = useTransition();
         
-        const handleCreate = async () => {
-            // Prevent double-click
-            if (createWorkflow.isPending || isPending) return;
-            
-            try {
-                const data = await createWorkflow.mutateAsync({});
-                // Prefetch new workflow data before navigating for instant load
-                await utils.workflows.getOne.prefetch({ id: data.id });
-                startTransition(() => {
-                    router.push(`/workflows/${data.id}`);
-                });
-                // Invalidate after navigation started
-                utils.workflows.getMany.invalidate();
-            } catch (error) {
-                handleError(error);
-            }
+        const handleCreate = () => {
+            if (isPending) return;
+            startTransition(() => {
+                router.push("/workflows/new");
+            });
         };
 
     return (
-        <>
-            {model}
-            <EntityHeader 
-                title="Workflows" 
-                description="Automate your tasks with workflows."
-                onNew={handleCreate}
-                newButtonLabel="New Workflow"
-                disabled={disabled}
-                isCreating={createWorkflow.isPending}
-            />
-        </>
+        <EntityHeader 
+            title="Workflows" 
+            description="Automate your tasks with workflows."
+            onNew={handleCreate}
+            newButtonLabel="New Workflow"
+            disabled={disabled}
+            isCreating={isPending}
+        />
     );
 };
 
@@ -258,7 +238,35 @@ export const WorkflowsContainer = ({
 };
 
 export const WorkflowsLoading = () => {
-    return <LoadingView message="Loading workflows..."  />;
+    return (
+        <div className="flex flex-col h-full gap-y-4">
+            <div className="flex flex-col gap-y-4">
+                {/* Skeleton cards matching workflow items */}
+                {["skeleton-1", "skeleton-2", "skeleton-3"].map((key) => (
+                    <Card key={key} className="p-4 shadow-none">
+                        <CardContent className="flex flex-row items-center justify-between p-0">
+                            <div className="flex items-center gap-3">
+                                <Skeleton className="size-8 rounded" />
+                                <div className="space-y-2">
+                                    <Skeleton className="h-4 w-32" />
+                                    <Skeleton className="h-3 w-48" />
+                                </div>
+                            </div>
+                            <Skeleton className="size-8 rounded" />
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+            {/* Skeleton pagination */}
+            <div className="flex justify-between items-center gap-x-2 w-full">
+                <Skeleton className="h-4 w-24" />
+                <div className="flex items-center space-x-2">
+                    <Skeleton className="h-8 w-20" />
+                    <Skeleton className="h-8 w-16" />
+                </div>
+            </div>
+        </div>
+    );
 };
 export const WorkflowsError = ({ message }: { message?: string }) => {
     return <ErrorView message={message ?? "Error loading workflows."}  />;

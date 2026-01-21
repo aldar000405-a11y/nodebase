@@ -34,7 +34,9 @@ export const createCallerFactory = t.createCallerFactory;
 // Protected procedure - only logged in users
 export const protectedProcedure = baseProcedure.use(async ({ ctx, next }) => {
   const userId = ctx.userId ?? ctx.session?.user?.id;
-  if (!userId) {
+  const user = ctx.session?.user;
+  
+  if (!userId || !user) {
     throw new TRPCError({
       code: "UNAUTHORIZED",
       message: "You must be logged in to access this resource",
@@ -45,6 +47,12 @@ export const protectedProcedure = baseProcedure.use(async ({ ctx, next }) => {
     ctx: {
       ...ctx,
       userId,
+      auth: {
+        user: {
+          ...user,
+          id: userId,
+        },
+      },
     },
   });
 });

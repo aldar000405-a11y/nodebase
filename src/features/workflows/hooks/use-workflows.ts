@@ -51,10 +51,10 @@ export const useRemoveWorkflow = () => {
 
 // hook to fetch a single workflow using suspense
 
-export const useSuspenseWorkflow = (workflowId: string) => {
+export const useSuspenseWorkflow = (id: string) => {
   const trpc = useTRPC();
   return useSuspenseQuery(
-    trpc.workflows.getOne.queryOptions({ id: workflowId }),
+    trpc.workflows.getOne.queryOptions({ id }),
   );
 };
 
@@ -76,6 +76,27 @@ export const useUpdateWorkflowName = () => {
       },
       onError: (error) => {
         toast.error(`Failed to update workflow: ${error.message}`);
+      },
+    }),
+  );
+};
+
+export const useUpdateWorkflow = () => {
+    const trpc = useTRPC();
+    const queryClient = useQueryClient();
+  return useMutation(
+    trpc.workflows.update.mutationOptions({
+      onSuccess: (data) => {
+        toast.success(`Workflows "${data.name}" saved successfully`);
+        queryClient.invalidateQueries(
+          trpc.workflows.getMany.queryOptions({}),
+        );
+        queryClient.invalidateQueries(
+          trpc.workflows.getOne.queryOptions({ id: data.id }),
+        );
+      },
+      onError: (error) => {
+        toast.error(`Failed to savee workflow: ${error.message}`);
       },
     }),
   );
