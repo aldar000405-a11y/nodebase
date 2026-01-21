@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Provider } from 'jotai'
+import { Geist, Geist_Mono } from "next/font/google"
+import { TRPCReactProvider } from "@/trpc/client";
+import { Toaster } from "@/components/ui/sonner";
+import { NuqsAdapter } from 'nuqs/adapters/next/app'
 import "./globals.css";
 
 const geistSans = Geist({
@@ -25,9 +29,18 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased h-screen w-screen overflow-hidden`}
       >
-        {children}
+       <div className="flex flex-col h-full w-full">
+         <TRPCReactProvider>
+          <NuqsAdapter>
+            <Provider>
+            {children}
+          <Toaster/>
+          </Provider>
+           </NuqsAdapter>
+         </TRPCReactProvider>
+       </div>
       </body>
     </html>
   );
