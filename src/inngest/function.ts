@@ -1,106 +1,54 @@
+import { NonRetriableError } from "inngest";
 import { inngest } from "./client";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { createOpenAI } from "@ai-sdk/openai";
-import { createAnthropic } from "@ai-sdk/anthropic";
-import { generateText } from "ai";
-import * as  Sentry from "@sentry/nextjs";
-import { gemini } from "inngest";
-// import { anthropic } from "inngest";
+import  prisma  from "@/lib/db";
+import { topologicalSort } from "./utils";
+import { NodeType } from "@/generated/prisma";
+import { getExecutor } from "@/features/executions/lib/executor-registry";
 
 
-const google = createGoogleGenerativeAI();
-const openai = createOpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-const anthropic = createAnthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY || "sk-placeholder", // Fallback for missing key
-});
-
-export const execute = inngest.createFunction(
-  {id : "execute-ai"},
-  { event: "execute/ai" },
+export const executeWorkflow = inngest.createFunction(
+  { id: "execute-workflow" },
+  { event: "workflows/execute.workflow" },
   async ({ event, step }) => {
-    await step.sleep("pretend", "5s");
-    Sentry.logger.info('user triggered AI execution', { log_source:
-      'sentry_source'
-    })
+    const workflowId = event.data.workflowId;
 
-
-    const {steps: geminiSteps} = await step.ai.wrap(
-      "generate-with-multiple-models",
-      generateText,
-      {
-        model:  google('gemini-2.5-flash'),
-        system: "You are a helpful assistant.",
-        prompt: "Write a vegetarian lasagna recipe for 4 people.",
-        experimental_telemetry: {
-          isEnabled: true,
-          recordInputs: true,
-          recordOutputs: true,
-        }
-      }
-    );
-    const {steps: openaiSteps} = await step.ai.wrap(
-      "generate-with-openai",
-      generateText,
-      {
-        model:  openai('gpt-4o-mini') as any,
-        system: "You are a helpful assistant.",
-        prompt: "Write a vegetarian lasagna recipe for 4 people.",
-         experimental_telemetry: {
-          isEnabled: true,
-          recordInputs: true,
-          recordOutputs: true,
-        }
-      }
-    );
-    const {steps: anthropicSteps} = await step.ai.wrap(
-      "generate-with-anthropic",
-      generateText,
-      {
-        model:  anthropic('claude-3-5-sonnet-20241022') as any,
-        system: "You are a helpful assistant.",
-        prompt: "Write a vegetarian lasagna recipe for 4 people.",
-         experimental_telemetry: {
-          isEnabled: true,
-          recordInputs: true,
-          recordOutputs: true,
-        }
-      }
-    );
-    return{
-      geminiSteps,
-      openaiSteps,
-      anthropicSteps,
+    if (!workflowId) {
+      throw new NonRetriableError("Workflow ID is missing");
     }
-  },
-);
+    const sortedNodes = await step.run("Prepare-workflow", async () => {
+      const workflow = await prisma.workflow.findUniqueOrThrow({
+        where: { id: workflowId },
+        include: { 
+          nodes: true,
+          connections: true
+        },
+      });
 
-// Test hello.world function for workflow testing
-export const helloWorld = inngest.createFunction(
-  { 
-    id: "test-hello-world",
-  },
-  { event: "test/hello.world" },
-  async ({ event, step }) => {
-    try {
-      console.log("Hello world function triggered for email:", event.data.email);
-      
-      // Simulate some work
-      await step.sleep("wait-a-moment", "2s");
-      
-      console.log("Hello world function completed");
-      return { 
-        success: true, 
-        message: `Workflow created and processed for ${event.data.email}`,
-        email: event.data.email,
-        timestamp: new Date().toISOString(),
-      };
-    } catch (error) {
-      console.error("Hello world function error:", error);
-      throw error;
+      return topologicalSort(workflow.nodes, workflow.connections);
+    
+    });
+
+    // initialize the context with any initial data from the trigger
+    let context = event.data.initialData || {};
+
+    // Execute each node
+    for (const node of sortedNodes) {
+      const executor = getExecutor(node.type as NodeType);
+      context = await executor({
+        data: node.data as Record<string, unknown>,
+        nodeId: node.id,
+        context,
+        step,
+
+      });
     }
-  }
+
+    return{ 
+      workflowId,
+      result: context,
+    };
+
+  },
 );
 
 

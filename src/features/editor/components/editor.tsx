@@ -1,6 +1,6 @@
 "use client";
 import type { ReactNode } from 'react';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import {
      ReactFlow,
       applyNodeChanges,
@@ -24,6 +24,8 @@ import { useSuspenseWorkflow } from "@/features/workflows/hooks/use-workflows";
 import '@xyflow/react/dist/style.css';
 import { nodeComponents } from '@/config/node-components';
 import { editorAtom } from "../store/atoms";
+import { NodeType } from "@/generated/prisma";
+import { ExecuteWorkflowButton } from '@/features/editor/components/execute-workflow-button';
 
 
 export const EditorLoading = () => {
@@ -58,6 +60,12 @@ export const Editor = ({ workflowId }: { workflowId: string }) => {
     const [nodes, setNodes] = useState<Node[]>(workflow.nodes);
     const [edges, setEdges] = useState<Edge[]>(workflow.edges);
 
+    // Prefetch node component modules to avoid delayed chunk loading
+    useEffect(() => {
+      void import('@/features/executions/components/http-request/node');
+      void import('@/features/triggers/components/manual-trigger/node');
+    }, []);
+
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => setNodes((nodesSnapshot) => applyNodeChanges(changes, nodesSnapshot)),
     [],
@@ -70,7 +78,9 @@ export const Editor = ({ workflowId }: { workflowId: string }) => {
     (params: Connection) => setEdges((edgesSnapshot) => addEdge(params, edgesSnapshot)),
     [],
   );
-
+  const hasManualTrigger = useMemo(() => {
+    return nodes.some((node) => node.type === NodeType.MANUAL_TRIGGER)
+  }, [nodes])
     return (
         <div className="size-full">
           <ReactFlow
@@ -94,6 +104,11 @@ export const Editor = ({ workflowId }: { workflowId: string }) => {
             <Panel position="top-right">
               <AddNodeButton />
             </Panel>
+            {hasManualTrigger && (
+            <Panel position="bottom-center">
+              <ExecuteWorkflowButton workflowId={workflowId} />
+            </Panel>
+            )}
             </ReactFlow>
         </div>
     );

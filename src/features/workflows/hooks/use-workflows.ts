@@ -96,7 +96,22 @@ export const useUpdateWorkflow = () => {
         );
       },
       onError: (error) => {
-        toast.error(`Failed to savee workflow: ${error.message}`);
+        toast.error(`Failed to save workflow: ${error.message}`);
+      },
+    }),
+  );
+};
+
+// hook to execute a workflow
+export const useExecuteWorkflow = () => {
+    const trpc = useTRPC();
+  return useMutation(
+    trpc.workflows.execute.mutationOptions({
+      onSuccess: (data) => {
+        toast.success(`Workflows "${data.name}" executed successfully`);
+      },
+      onError: (error) => {
+        toast.error(`Failed to execute workflow: ${error.message}`);
       },
     }),
   );
