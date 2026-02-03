@@ -42,10 +42,12 @@ export function NewWorkflowClient() {
     <div className="flex h-full w-full items-center justify-center p-6">
       {model}
       <div className="w-full max-w-sm space-y-4 text-center">
-        <div className="flex items-center justify-center gap-2">
-          <Loader2Icon className="size-5 animate-spin text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">Creating workflow…</p>
-        </div>
+        {!createWorkflow.isError && (
+          <div className="flex items-center justify-center gap-2">
+            <Loader2Icon className="size-5 animate-spin text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">Creating workflow…</p>
+          </div>
+        )}
 
         {createWorkflow.isError && (
           <div className="space-y-3">

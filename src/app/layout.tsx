@@ -31,16 +31,16 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased h-screen w-screen overflow-hidden`}
       >
-       <div className="flex flex-col h-full w-full">
-         <TRPCReactProvider>
-          <NuqsAdapter>
-            <Provider>
-            {children}
-          <Toaster/>
-          </Provider>
-           </NuqsAdapter>
-         </TRPCReactProvider>
-       </div>
+        <div className="flex flex-col h-full w-full">
+          <TRPCReactProvider>
+            <NuqsAdapter>
+              <Provider>
+                {children}
+                <Toaster />
+              </Provider>
+            </NuqsAdapter>
+          </TRPCReactProvider>
+        </div>
       </body>
     </html>
   );

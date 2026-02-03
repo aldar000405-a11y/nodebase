@@ -1,5 +1,7 @@
 procs:
   inngest:
-    shell: pnpm inngest:dev
+    shell: powershell
+    command: pnpm inngest:dev
   next:
-    shell: pnpm dev
+    shell: powershell
+    command: pnpm dev

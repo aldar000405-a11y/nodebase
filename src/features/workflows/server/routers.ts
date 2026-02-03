@@ -15,13 +15,13 @@ export const workflowsRouter = createTRPCRouter({
       const workflow = await prisma.workflow.findUniqueOrThrow({
         where: { 
           id: input.id,
-           userId: ctx.auth.user.id
-           },
+          userId: ctx.auth.user.id
+        },
       });
 
       await inngest.send({
         name: "workflows/execute.workflow",
-        data: { workflowId: input.id},
+        data: { workflowId: input.id },
       });
 
       return workflow;

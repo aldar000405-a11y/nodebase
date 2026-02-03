@@ -11,7 +11,7 @@ interface WorkflowNodeProps {
     onDelete?: () => void;
     onSettings?: () => void;
     name?: string;
-     description?: string;
+    description?: string;
 };
 
 export function WorkflowNode({
@@ -26,36 +26,36 @@ export function WorkflowNode({
 }: WorkflowNodeProps) {
     return (
         <>
-        {showToolbar && (
-            <NodeToolbar position={Position.Top} className="flex gap-2">
-                <Button size="sm" variant="ghost" onClick={onSettings}>
-                    <SettingsIcon className="size-4" />
-                </Button>
-                <Button size="sm" variant="ghost" onClick={onDelete}>
-                    <TrashIcon className="size-4" />
-                </Button>
-            </NodeToolbar>
-        )}
-        {children}
-        { name && (
-            <NodeToolbar
-            position={Position.Bottom}
-            isVisible
-            className="max-w-[200px] text-center"
-            >
-                <p className="font-medium">
-                    {name}
-                </p>
-                {description && (
-                    <p
-                    className="text-muted-foreground truncate text-sm"
-                    >
-                        {description}
+            {showToolbar && (
+                <NodeToolbar position={Position.Top} className="flex gap-2">
+                    <Button size="sm" variant="ghost" onClick={onSettings}>
+                        <SettingsIcon className="size-4" />
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={onDelete}>
+                        <TrashIcon className="size-4" />
+                    </Button>
+                </NodeToolbar>
+            )}
+            {children}
+            {name && (
+                <NodeToolbar
+                    position={Position.Bottom}
+                    isVisible
+                    className="max-w-[200px] text-center"
+                >
+                    <p className="font-medium">
+                        {name}
                     </p>
-                )}
+                    {description && (
+                        <p
+                            className="text-muted-foreground truncate text-sm"
+                        >
+                            {description}
+                        </p>
+                    )}
 
-            </NodeToolbar>
-        )}
+                </NodeToolbar>
+            )}
         </>
     );
 };

@@ -56,17 +56,25 @@ export function RegisterForm() {
     try {
       toastId = toast.loading("Creating account...");
       const normalizedEmail = values.email.toLowerCase().trim();
-      
-      await authClient.signUp.email({
+
+      const { error } = await authClient.signUp.email({
         name: normalizedEmail.split("@")[0],
         email: normalizedEmail,
         password: values.password,
       });
-      
+
+      if (error) {
+        toast.dismiss(toastId);
+        toast.error(error.message || "Failed to create account");
+        return;
+      }
+
       toast.dismiss(toastId);
       toast.success("✅ Account created successfully! Redirecting...");
+
+      // Use window.location.href for a full reload to ensure cookies are strictly handled
       setTimeout(() => {
-        router.push("/");
+        window.location.href = "/";
       }, 500);
     } catch (error: unknown) {
       if (toastId !== undefined) toast.dismiss(toastId);
@@ -98,7 +106,7 @@ export function RegisterForm() {
                     alt="GitHub"
                     width={20}
                     height={20}
-                  
+
                   />
                   Continue with GitHub
                 </Button>
@@ -108,7 +116,7 @@ export function RegisterForm() {
                     alt="google"
                     width={20}
                     height={20}
-                  
+
                   />
                   Continue with Google
                 </Button>

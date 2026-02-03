@@ -42,7 +42,9 @@ const menuItem = [
 export const AppSidebar = () => {
 	const pathname = usePathname();
 	const router = useRouter();
-	const { hasActiveSubscription } = useHasActiveSubscription();
+	const { hasActiveSubscription, isLoading } = useHasActiveSubscription();
+	const { data: session } = authClient.useSession();
+	const user = session?.user;
 	const utils = trpc.useUtils();
 
 	// Prefetch workflows data on hover for faster navigation
@@ -99,8 +101,8 @@ export const AppSidebar = () => {
 											asChild
 											className="sidebar-menu-item"
 										>
-											<Link 
-												href={item.url} 
+											<Link
+												href={item.url}
 												prefetch
 												onMouseEnter={() => handlePrefetch(item.url)}
 											>
@@ -118,7 +120,7 @@ export const AppSidebar = () => {
 
 			<SidebarFooter>
 				<SidebarMenu>
-					{!hasActiveSubscription && (
+					{!isLoading && !hasActiveSubscription && (
 						<SidebarMenuItem>
 							<SidebarMenuButton
 								tooltip="upgrade to pro"
@@ -134,18 +136,22 @@ export const AppSidebar = () => {
 					<SidebarMenuItem>
 						<SidebarMenuButton
 							tooltip="billing portal"
-						className="gap-x-4 h-10 px-4"
-						onClick={() => authClient.customer.portal()}
-					>
-						<CreditCardIcon className="h-4 w-4" />
-						<span>Billing portal</span>
-					</SidebarMenuButton>
-				</SidebarMenuItem>
+							className="gap-x-4 h-10 px-4"
+							onClick={() => authClient.customer.portal()}
+						>
+							<CreditCardIcon className="h-4 w-4" />
+							<span>Billing portal</span>
+						</SidebarMenuButton>
+					</SidebarMenuItem>
 
-				<SidebarMenuItem>
-					<SidebarMenuButton
-						tooltip="sign out"
-						className="gap-x-4 h-10 px-4 bg-gray-200 hover:bg-gray-300 text-gray-700"
+					<SidebarMenuItem className="px-4 py-2 text-xs text-muted-foreground truncate border-t border-slate-200">
+						{user?.email}
+					</SidebarMenuItem>
+
+					<SidebarMenuItem>
+						<SidebarMenuButton
+							tooltip="sign out"
+							className="gap-x-4 h-10 px-4 bg-gray-200 hover:bg-gray-300 text-gray-700"
 							onClick={async () => {
 								await authClient.signOut({
 									fetchOptions: {

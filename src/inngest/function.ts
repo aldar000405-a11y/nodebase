@@ -4,6 +4,8 @@ import prisma from "@/lib/db";
 import { topologicalSort } from "./utils";
 import { NodeType } from "@/generated/prisma";
 import { getExecutor } from "@/features/executions/lib/executor-registry";
+import { httpRequestChannel } from "./channels/http-request";
+import { manualTriggerChannel } from "./channels/manual-trigger";
 
 // Convert (()) syntax to {{}} for Handlebars compatibility
 const convertTemplateVariables = (text: string): string => {
@@ -26,9 +28,18 @@ const preprocessNodeData = (data: Record<string, unknown>): Record<string, unkno
 };
 
 export const executeWorkflow = inngest.createFunction(
-  { id: "execute-workflow" },
-  { event: "workflows/execute.workflow" },
-  async ({ event, step }) => {
+  {
+    id: "execute-workflow",
+    retries: 0,
+  },
+  {
+    event: "workflows/execute.workflow",
+    channels: [
+      httpRequestChannel(),
+      manualTriggerChannel(),
+    ],
+  },
+  async ({ event, step, publish }) => {
     const workflowId = event.data.workflowId;
 
     if (!workflowId) {
@@ -43,7 +54,14 @@ export const executeWorkflow = inngest.createFunction(
         },
       });
 
-      return topologicalSort(workflow.nodes, workflow.connections);
+      try {
+        return topologicalSort(workflow.nodes, workflow.connections);
+      } catch (error: any) {
+        if (error.message.includes("Cyclic dependency")) {
+          throw new NonRetriableError(`Workflow failed: Cyclic dependency detected. Node: ${error.message.split('"')[1] || "unknown"}`);
+        }
+        throw error;
+      }
     });
 
     // initialize the context with any initial data from the trigger
@@ -59,6 +77,7 @@ export const executeWorkflow = inngest.createFunction(
         nodeId: node.id,
         context,
         step,
+        publish,
       });
     }
 
