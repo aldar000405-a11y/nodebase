@@ -1,34 +1,45 @@
 import { generateSlug } from "random-word-slugs";
 import { prisma } from "@/lib/prisma";
-import { createTRPCRouter, protectedProcedure, premiumProcedure } from "@/trpc/init";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  premiumProcedure,
+} from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
 import { NodeType } from "@/generated/prisma";
 import { PAGINATION } from "@/config/constants";
 import { inngest } from "@/inngest/client";
-
+import { sendWorkflowExecution } from "@/inngest/utils";
 
 export const workflowsRouter = createTRPCRouter({
   execute: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input, ctx }) => {
       const workflow = await prisma.workflow.findUniqueOrThrow({
-        where: { 
+        where: {
           id: input.id,
-          userId: ctx.auth.user.id
+          userId: ctx.auth.user.id,
         },
       });
 
-      await inngest.send({
-        name: "workflows/execute.workflow",
-        data: { workflowId: input.id },
+      await sendWorkflowExecution({
+        workflowId: input.id,
       });
 
       return workflow;
     }),
-  create: premiumProcedure
+  create: protectedProcedure // Changed from premiumProcedure
     .input(z.object({}))
-    .mutation(({ ctx }) => {
+    .mutation(async ({ ctx }) => {
+      // Added async
+      // Fast server-side check for premium status (will be populated efficiently in ctx)
+      if (!ctx.hasPremium) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You must have an active subscription to create workflows.",
+        });
+      }
       return prisma.workflow.create({
         data: {
           name: generateSlug(3),
@@ -133,26 +144,30 @@ export const workflowsRouter = createTRPCRouter({
           where: { workflowId: id },
         });
 
-        await tx.node.createMany({
-          data: nodes.map((node) => ({
-            id: node.id,
-            workflowId: id,
-            name: node.type || "unknown",
-            type: (node.type as NodeType) || NodeType.INITIAL,
-            position: node.position,
-            data: node.data || {},
-          })),
-        });
+        if (nodes.length > 0) {
+          await tx.node.createMany({
+            data: nodes.map((node) => ({
+              id: node.id,
+              workflowId: id,
+              name: node.type || "unknown",
+              type: (node.type as NodeType) || NodeType.INITIAL,
+              position: node.position,
+              data: node.data || {},
+            })),
+          });
+        }
 
-        await tx.connection.createMany({
-          data: edges.map((edge) => ({
-            workflowId: id,
-            fromNodeId: edge.source,
-            toNodeId: edge.target,
-            fromOutput: edge.sourceHandle || "main",
-            toInput: edge.targetHandle || "main",
-          })),
-        });
+        if (edges.length > 0) {
+          await tx.connection.createMany({
+            data: edges.map((edge) => ({
+              workflowId: id,
+              fromNodeId: edge.source,
+              toNodeId: edge.target,
+              fromOutput: edge.sourceHandle || "main",
+              toInput: edge.targetHandle || "main",
+            })),
+          });
+        }
 
         await tx.workflow.update({
           where: { id },
@@ -218,11 +233,11 @@ export const workflowsRouter = createTRPCRouter({
         userId: ctx.auth.user.id,
         ...(trimmedSearch
           ? {
-            name: {
-              contains: trimmedSearch,
-              mode: "insensitive" as const,
-            },
-          }
+              name: {
+                contains: trimmedSearch,
+                mode: "insensitive" as const,
+              },
+            }
           : {}),
       };
 

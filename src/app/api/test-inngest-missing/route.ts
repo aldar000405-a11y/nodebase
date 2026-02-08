@@ -12,7 +12,7 @@ export async function GET() {
 
     return NextResponse.json(
       { ok: false, message: "Failed: Workflow ID is missing" },
-      { status: 400 }
+      { status: 400 },
     );
   } catch (err: any) {
     // Surface any immediate send errors to help debugging.

@@ -28,9 +28,14 @@ import { authClient } from "@/lib/auth-client";
 
 const registerSchema = z
   .object({
-    email: z.string().min(1, "Email is required").email("Invalid email address"),
+    email: z
+      .string()
+      .min(1, "Email is required")
+      .email("Invalid email address"),
     password: z.string().min(4, "Password must be at least 4 characters"),
-    confirmPassword: z.string().min(4, "Password must be at least 4 characters"),
+    confirmPassword: z
+      .string()
+      .min(4, "Password must be at least 4 characters"),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",
@@ -79,13 +84,11 @@ export function RegisterForm() {
     } catch (error: unknown) {
       if (toastId !== undefined) toast.dismiss(toastId);
       console.error("Signup error:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to create account";
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to create account";
       toast.error(errorMessage);
     }
   };
-
-
-
 
   const isPending = form.formState.isSubmitting;
 
@@ -93,30 +96,42 @@ export function RegisterForm() {
     <div className="flex flex-col gap-6 w-full max-w-sm">
       <Card className="w-full border border-gray-200 shadow-sm">
         <CardHeader className="text-center space-y-2">
-          <CardTitle className="text-2xl font-semibold text-gray-900">Create Account</CardTitle>
-          <CardDescription className="text-gray-600">Sign up to get started</CardDescription>
+          <CardTitle className="text-2xl font-semibold text-gray-900">
+            Create Account
+          </CardTitle>
+          <CardDescription className="text-gray-600">
+            Sign up to get started
+          </CardDescription>
         </CardHeader>
         <CardContent className="pt-2">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="grid gap-4">
-                <Button variant="outline" className="w-full border border-gray-300 hover:bg-gray-50" type="button" disabled={isPending}>
+                <Button
+                  variant="outline"
+                  className="w-full border border-gray-300 hover:bg-gray-50"
+                  type="button"
+                  disabled={isPending}
+                >
                   <Image
                     src="/logos/github.svg"
                     alt="GitHub"
                     width={20}
                     height={20}
-
                   />
                   Continue with GitHub
                 </Button>
-                <Button variant="outline" className="w-full border border-gray-300 hover:bg-gray-50" type="button" disabled={isPending}>
+                <Button
+                  variant="outline"
+                  className="w-full border border-gray-300 hover:bg-gray-50"
+                  type="button"
+                  disabled={isPending}
+                >
                   <Image
                     src="/logos/google.svg"
                     alt="google"
                     width={20}
                     height={20}
-
                   />
                   Continue with Google
                 </Button>
@@ -144,7 +159,11 @@ export function RegisterForm() {
                     <FormItem>
                       <FormLabel>Password</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="********" {...field} />
+                        <Input
+                          type="password"
+                          placeholder="********"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -158,7 +177,11 @@ export function RegisterForm() {
                     <FormItem>
                       <FormLabel>Confirm Password</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="********" {...field} />
+                        <Input
+                          type="password"
+                          placeholder="********"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -171,7 +194,7 @@ export function RegisterForm() {
               </div>
 
               <div className="text-center text-sm mt-4">
-                Already have an account? {" "}
+                Already have an account?{" "}
                 <Link href="/login" className="underline underline-offset-4">
                   Log in
                 </Link>

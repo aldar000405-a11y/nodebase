@@ -11,18 +11,16 @@ import {
 import type { SearchParams } from "nuqs/server";
 import { workflowsParamsLoader } from "@/features/workflows/server/params-loader";
 
-
 type Props = {
   searchParams: Promise<SearchParams>;
 };
 
 const Page = async ({ searchParams }: Props) => {
   await requireAuth();
-  
+
   const params = await workflowsParamsLoader(searchParams);
   await prefetchWorkflows(params);
 
-  
   const bypassBoundary =
     process.env.NEXT_PUBLIC_DEBUG_BYPASS_WORKFLOWS_ERROR_BOUNDARY === "1";
 

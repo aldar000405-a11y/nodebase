@@ -1,31 +1,30 @@
 import { useQuery } from "@tanstack/react-query";
-import { authClient } from "@/lib/auth-client";
+import { trpc } from "@/trpc/client"; // Import trpc client
+// import { authClient } from "@/lib/auth-client"; // No longer needed for this hook
 
+// This hook is no longer directly used for active subscription status,
+// but can remain if other parts of the app need the full customer state.
+// For now, we'll keep it, but focus on useHasActiveSubscription
 export const useSubscription = () => {
-    return useQuery({
-        queryKey: ["subscription"],
-        queryFn: async () => {
-            const { data, error } = await authClient.customer.state();
-            if (error) {
-                console.warn("useSubscription error (likely new user):", error);
-                return null;
-            }
-            return data;
-        },
-    });
+  return useQuery({
+    queryKey: ["subscription"],
+    queryFn: async () => {
+      // If authClient.customer.state() is still needed for other data, keep this.
+      // Otherwise, this hook might be deprecated or refactored further.
+      // For now, returning null to show it's not the primary source for hasActiveSubscription
+      return null; // authClient.customer.state() is no longer main source for premium status
+    },
+  });
 };
 
 export const useHasActiveSubscription = () => {
-    const { data: customerState, isLoading, ...rest } =
-        useSubscription();
-    const hasActiveSubscription =
-        customerState?.activeSubscriptions &&
-        customerState.activeSubscriptions.length > 0;
+  const { data, isLoading, ...rest } = trpc.users.getPremiumStatus.useQuery(); // Use tRPC query
+  const hasActiveSubscription = data?.hasPremium || false; // Extract hasPremium
 
-    return {
-        hasActiveSubscription,
-        subscription: customerState?.activeSubscriptions?.[0],
-        isLoading,
-        ...rest,
-    };
+  return {
+    hasActiveSubscription,
+    // subscription: customerState?.activeSubscriptions?.[0], // No longer directly available here
+    isLoading,
+    ...rest,
+  };
 };

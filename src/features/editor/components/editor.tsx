@@ -26,6 +26,7 @@ import { nodeComponents } from '@/config/node-components';
 import { editorAtom } from "../store/atoms";
 import { NodeType } from "@/generated/prisma";
 import { ExecuteWorkflowButton } from '@/features/editor/components/execute-workflow-button';
+import { NodeSelectorFlowStateProvider } from "@/components/node-selector";
 
 
 export const EditorLoading = () => {
@@ -83,33 +84,35 @@ export const Editor = ({ workflowId }: { workflowId: string }) => {
   }, [nodes])
     return (
         <div className="size-full">
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            nodeTypes={nodeComponents}
-            onInit={setEditor}
-            fitView
-            snapGrid={[10, 10]}
-            snapToGrid
-            panOnScroll
-            panOnDrag={false}
-            selectionOnDrag
-          >
-            <Background />
-            <Controls />
-            <MiniMap />
-            <Panel position="top-right">
-              <AddNodeButton />
-            </Panel>
-            {hasManualTrigger && (
-            <Panel position="bottom-center">
-              <ExecuteWorkflowButton workflowId={workflowId} />
-            </Panel>
-            )}
+          <NodeSelectorFlowStateProvider nodes={nodes} setNodes={setNodes}>
+            <ReactFlow
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onConnect={onConnect}
+              nodeTypes={nodeComponents}
+              onInit={setEditor}
+              fitView
+              snapGrid={[10, 10]}
+              snapToGrid
+              panOnScroll
+              panOnDrag={false}
+              selectionOnDrag
+            >
+              <Background />
+              <Controls />
+              <MiniMap />
+              <Panel position="top-right">
+                <AddNodeButton />
+              </Panel>
+              {hasManualTrigger && (
+                <Panel position="bottom-center">
+                  <ExecuteWorkflowButton workflowId={workflowId} />
+                </Panel>
+              )}
             </ReactFlow>
+          </NodeSelectorFlowStateProvider>
         </div>
     );
 };

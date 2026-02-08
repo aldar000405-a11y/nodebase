@@ -44,8 +44,12 @@ function getQueryClient() {
   return browserQueryClient;
 }
 
-let browserTRPCClient: ReturnType<typeof createTRPCClient<AppRouter>> | undefined;
-let browserTRPCOptions: ReturnType<typeof createTRPCOptionsProxy<AppRouter>> | undefined;
+let browserTRPCClient:
+  | ReturnType<typeof createTRPCClient<AppRouter>>
+  | undefined;
+let browserTRPCOptions:
+  | ReturnType<typeof createTRPCOptionsProxy<AppRouter>>
+  | undefined;
 
 function getTRPCClient() {
   const client = createTRPCClient<AppRouter>({
@@ -89,9 +93,7 @@ type TRPCReactProviderProps = {
   children: React.ReactNode;
 };
 
-export function TRPCReactProvider({
-  children,
-}: TRPCReactProviderProps) {
+export function TRPCReactProvider({ children }: TRPCReactProviderProps) {
   const [queryClient] = useState(getQueryClient);
   const [trpcClient] = useState(() =>
     trpc.createClient({
@@ -106,9 +108,7 @@ export function TRPCReactProvider({
 
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
-      <QueryClientProvider client={queryClient}>
-        {children}
-      </QueryClientProvider>
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     </trpc.Provider>
   );
 }

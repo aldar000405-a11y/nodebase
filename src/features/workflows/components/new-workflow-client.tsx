@@ -26,17 +26,23 @@ export function NewWorkflowClient() {
       {},
       {
         onSuccess: (data) => {
-          // Navigate immediately; don't block on prefetch/invalidate.
           router.replace(`/workflows/${data.id}`);
-          void utils.workflows.getOne.prefetch({ id: data.id });
-          void utils.workflows.getMany.invalidate();
+          toast.success(`Workflow "${data.name}" created successfully`);
+          console.log("Workflow created and navigation initiated:", data.id);
+          // Removed prefetch and invalidate for testing purposes
         },
         onError: (error) => {
           handleError(error);
         },
       },
     );
-  }, [createWorkflow, handleError, router, utils.workflows.getMany, utils.workflows.getOne]);
+  }, [
+    createWorkflow,
+    handleError,
+    router,
+    utils.workflows.getMany,
+    utils.workflows.getOne,
+  ]);
 
   return (
     <div className="flex h-full w-full items-center justify-center p-6">
@@ -51,7 +57,9 @@ export function NewWorkflowClient() {
 
         {createWorkflow.isError && (
           <div className="space-y-3">
-            <p className="text-sm text-destructive">Failed to create workflow.</p>
+            <p className="text-sm text-destructive">
+              Failed to create workflow.
+            </p>
             <Button asChild variant="outline">
               <Link href="/workflows">Back to workflows</Link>
             </Button>

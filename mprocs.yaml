@@ -1,7 +1,10 @@
 procs:
+  ngrok:
+    shell: powershell
+    command: ["pnpm", "run", "ngrok:dev"]
   inngest:
     shell: powershell
-    command: pnpm inngest:dev
+    command: ["pnpm", "run", "inngest:dev"]
   next:
     shell: powershell
-    command: pnpm dev
+    command: ["pnpm", "run", "dev"]

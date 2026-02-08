@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { polarClient } from "@/lib/polar";
 import { headers } from "next/headers";
 import SuperJSON from "superjson";
+import { getFromCache, setInCache } from "@/lib/cache"; // Import cache utility
 
 // Initialize tRPC
 
@@ -13,10 +14,39 @@ export const createTRPCContext = async () => {
     headers: requestHeaders,
   });
 
+  let hasPremium = false;
+  const userId = session?.user?.id;
+
+  if (userId) {
+    const cacheKey = `premiumStatus-${userId}`;
+    let cachedStatus = getFromCache<{ hasPremium: boolean }>(cacheKey);
+
+    if (cachedStatus) {
+      hasPremium = cachedStatus.hasPremium;
+    } else {
+      try {
+        const customer = await polarClient.customers.getStateExternal({
+          externalId: userId,
+        });
+        hasPremium =
+          customer.activeSubscriptions &&
+          customer.activeSubscriptions.length > 0;
+        setInCache(cacheKey, { hasPremium }, 1000 * 10); // Cache for 10 seconds
+      } catch (error) {
+        console.warn(
+          `Failed to check premium status for user ${userId} in context:`,
+          error,
+        );
+        hasPremium = false;
+      }
+    }
+  }
+
   return {
     session,
-    userId: session?.user?.id,
+    userId,
     prisma,
+    hasPremium, // Added hasPremium to context
   };
 };
 
@@ -58,29 +88,39 @@ export const protectedProcedure = baseProcedure.use(async ({ ctx, next }) => {
 });
 
 // Premium procedure - only users with active subscriptions
-export const premiumProcedure = protectedProcedure.use(async ({ ctx, next }) => {
-  try {
-    const customer = await polarClient.customers.getStateExternal({
-      externalId: ctx.userId,
-    });
-
-    if (!customer.activeSubscriptions || customer.activeSubscriptions.length === 0) {
-      throw new TRPCError({
-        code: "FORBIDDEN",
-        message: "You must have an active subscription to access this resource",
+export const premiumProcedure = protectedProcedure.use(
+  async ({ ctx, next }) => {
+    try {
+      const customer = await polarClient.customers.getStateExternal({
+        externalId: ctx.userId,
       });
-    }
-  } catch (error: unknown) {
-    // If customer not found in Polar or any other error, treat as no subscription
-    if (!(error instanceof TRPCError) && (error as { code?: unknown } | null)?.code !== "FORBIDDEN") {
-      throw new TRPCError({
-        code: "FORBIDDEN",
-        message: "You must have an active subscription to access this resource",
-      });
+
+      if (
+        !customer.activeSubscriptions ||
+        customer.activeSubscriptions.length === 0
+      ) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message:
+            "You must have an active subscription to access this resource",
+        });
+      }
+    } catch (error: unknown) {
+      // If customer not found in Polar or any other error, treat as no subscription
+      if (
+        !(error instanceof TRPCError) &&
+        (error as { code?: unknown } | null)?.code !== "FORBIDDEN"
+      ) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message:
+            "You must have an active subscription to access this resource",
+        });
+      }
+
+      throw error;
     }
 
-    throw error;
-  }
-
-  return next({ ctx });
-});
+    return next({ ctx });
+  },
+);

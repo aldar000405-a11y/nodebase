@@ -1,6 +1,6 @@
-const http = require('http');
-const fs = require('fs');
-const path = require('path');
+const http = require("http");
+const fs = require("fs");
+const path = require("path");
 
 const PORT = process.env.PORT || 3002;
 
@@ -184,51 +184,59 @@ const html = `<!DOCTYPE html>
 
 const server = http.createServer((req, res) => {
   // Enable CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  
-  if (req.method === 'OPTIONS') {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, DELETE, OPTIONS",
+  );
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  if (req.method === "OPTIONS") {
     res.writeHead(200);
     res.end();
     return;
   }
-  
+
   // Serve home page
-  if (req.url === '/' && req.method === 'GET') {
-    res.writeHead(200, { 'Content-Type': 'text/html' });
+  if (req.url === "/" && req.method === "GET") {
+    res.writeHead(200, { "Content-Type": "text/html" });
     res.end(html);
     return;
   }
-  
+
   // Proxy API requests to Next.js dev server if it's running on 3001
-  if (req.url.startsWith('/api/') || req.url.startsWith('/auth/')) {
-    const proxyReq = http.request({
-      hostname: 'localhost',
-      port: 3001,
-      path: req.url,
-      method: req.method,
-      headers: req.headers
-    }, (proxyRes) => {
-      res.writeHead(proxyRes.statusCode, proxyRes.headers);
-      proxyRes.pipe(res);
+  if (req.url.startsWith("/api/") || req.url.startsWith("/auth/")) {
+    const proxyReq = http.request(
+      {
+        hostname: "localhost",
+        port: 3001,
+        path: req.url,
+        method: req.method,
+        headers: req.headers,
+      },
+      (proxyRes) => {
+        res.writeHead(proxyRes.statusCode, proxyRes.headers);
+        proxyRes.pipe(res);
+      },
+    );
+
+    proxyRes.on("error", () => {
+      res.writeHead(503, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "API server not available" }));
     });
-    
-    proxyRes.on('error', () => {
-      res.writeHead(503, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'API server not available' }));
-    });
-    
+
     req.pipe(proxyReq);
     return;
   }
-  
-  res.writeHead(404, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify({ error: 'Not found' }));
+
+  res.writeHead(404, { "Content-Type": "application/json" });
+  res.end(JSON.stringify({ error: "Not found" }));
 });
 
 server.listen(PORT, () => {
   console.log(`✅ Temporary server running at http://localhost:${PORT}`);
-  console.log(`⏳ Full Next.js app will be available once dependencies install...`);
+  console.log(
+    `⏳ Full Next.js app will be available once dependencies install...`,
+  );
   console.log(`📱 Inngest dev server: http://localhost:8288`);
 });

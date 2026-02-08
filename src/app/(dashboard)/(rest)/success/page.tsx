@@ -33,7 +33,8 @@ export default function SuccessPage() {
         </h1>
 
         <p className="text-gray-600 mb-6">
-          Thank you for upgrading to Pro! Your account now has access to all premium features.
+          Thank you for upgrading to Pro! Your account now has access to all
+          premium features.
         </p>
 
         <div className="bg-white rounded-lg p-4 mb-6 border border-green-200">

@@ -11,8 +11,6 @@ Sentry.init({
     Sentry.consoleLoggingIntegration({ levels: ["log", "warn", "error"] }),
   ],
 
-
-
   // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
   tracesSampleRate: process.env.NODE_ENV === "production" ? 1.0 : 0.1,
 
