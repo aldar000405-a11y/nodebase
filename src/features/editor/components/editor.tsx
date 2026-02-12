@@ -64,7 +64,7 @@ export const Editor = ({ workflowId }: { workflowId: string }) => {
     // Prefetch node component modules to avoid delayed chunk loading
     useEffect(() => {
       void import('@/features/executions/components/http-request/node');
-      void import('@/features/triggers/components/manual-trigger/node');
+      void import('@/features/triggers/manual-trigger/node');
     }, []);
 
   const onNodesChange = useCallback(

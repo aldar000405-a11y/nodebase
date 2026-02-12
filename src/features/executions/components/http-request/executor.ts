@@ -11,9 +11,9 @@ Handlebars.registerHelper("json", (context) => {
 });
 
 type HttpRequestData = {
-  variableName: string;
-  endpoint: string;
-  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+  variableName?: string;
+  endpoint?: string;
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   body?: string;
 };
 
@@ -28,10 +28,7 @@ export const httpRequestExecutor: NodeExecutor<HttpRequestData> = async ({
   const configHash = Buffer.from(JSON.stringify(data))
     .toString("hex")
     .slice(0, 8);
-  const stepId = `http-${nodeId.slice(-8)}-${configHash}`;
-
-  console.log(`[Executor ${nodeId.slice(-8)}] stepId generated: ${stepId}`);
-  console.log(`[Executor ${nodeId.slice(-8)}] Publishing loading status`);
+ 
 
   // Publish loading status OUTSIDE of step.run so it always runs
   await publish(
@@ -42,26 +39,38 @@ export const httpRequestExecutor: NodeExecutor<HttpRequestData> = async ({
   );
 
   try {
-    console.log(
-      `[Executor ${nodeId.slice(-8)}] Entering step.run with id: ${stepId}`,
-    );
+   
     // All logic inside step.run so the step ALWAYS appears in Inngest
-    const result = await step.run(stepId, async () => {
-      console.log(`[Executor ${nodeId.slice(-8)}] Inside step.run callback`);
-      // Validate inside step
-      if (!data.endpoint) {
-        throw new NonRetriableError(
-          "HTTP Request node: No endpoint configured",
+    const result = await step.run("http-request", async () => {
+       if (!data.endpoint) {
+        await publish(
+          httpRequestChannel().status({
+            nodeId,
+            status: "error",
+          }),
         );
+        throw new NonRetriableError(
+          "HTTP Request node: No endpoint configured");
       }
 
       if (!data.variableName) {
-        throw new NonRetriableError(
-          "HTTP Request node: Variable name not configured",
+        await publish(
+          httpRequestChannel().status({
+            nodeId,
+            status: "error",
+          }),
         );
+        throw new NonRetriableError(
+          "HTTP Request node: Variable name not configured");
       }
 
       if (!data.method) {
+        await publish(
+          httpRequestChannel().status({
+            nodeId,
+            status: "error",
+          }),
+        );
         throw new NonRetriableError(
           "HTTP Request node: HTTP method not configured",
         );
@@ -73,17 +82,8 @@ export const httpRequestExecutor: NodeExecutor<HttpRequestData> = async ({
       const options: KyOptions = { method };
 
       if (["POST", "PUT", "PATCH"].includes(method)) {
-        const bodySource = (data.body || "").trim() || "{}";
-        const resolved = Handlebars.compile(bodySource)(context);
-
-        try {
-          JSON.parse(resolved);
-        } catch {
-          throw new NonRetriableError(
-            `HTTP Request node: Invalid JSON body - ${resolved.substring(0, 100)}`,
-          );
-        }
-
+        const resolved = Handlebars.compile(data.body || "")(context);
+        JSON.parse(resolved);
         options.body = resolved;
         options.headers = {
           "Content-Type": "application/json",
@@ -110,7 +110,6 @@ export const httpRequestExecutor: NodeExecutor<HttpRequestData> = async ({
       };
     });
 
-    console.log(`[Executor ${nodeId.slice(-8)}] Publishing success status`);
 
     // Publish success OUTSIDE of step.run
     await publish(
@@ -122,8 +121,6 @@ export const httpRequestExecutor: NodeExecutor<HttpRequestData> = async ({
 
     return result;
   } catch (error) {
-    console.log(`[Executor ${nodeId.slice(-8)}] Publishing error status`);
-
     // Publish error OUTSIDE of step.run
     await publish(
       httpRequestChannel().status({
