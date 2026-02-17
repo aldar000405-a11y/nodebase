@@ -1,0 +1,175 @@
+"use client";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import z from "zod";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+
+
+const formSchema = z.object({
+  variableName: z
+    .string()
+    .min(1, { message: "Variable name is required" })
+    .regex(/^[a-zA-Z_][a-zA-Z0-9_]*$/, {
+      message:
+        "Variable name must start with a letter or underscore and contain only alphanumeric characters and underscores",
+    }),
+  systemPrompt: z.string().optional(),
+  userPrompt: z.string().min(1, "User prompt is required"),
+});
+
+export type GeminiFormValues = z.infer<typeof formSchema>;
+
+interface Props {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (values: z.infer<typeof formSchema>) => void;
+  defaultValues?: Partial<GeminiFormValues>;
+}
+
+export const GeminiDialog = ({
+  open,
+  onOpenChange,
+  onSubmit,
+  defaultValues = {},
+}: Props) => {
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      variableName: defaultValues.variableName || "",
+      systemPrompt: defaultValues.systemPrompt || "",
+      userPrompt: defaultValues.userPrompt || "",
+    },
+  });
+
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        variableName: defaultValues.variableName || "",
+        systemPrompt: defaultValues.systemPrompt || "",
+        userPrompt: defaultValues.userPrompt || "",
+      });
+    }
+  }, [open, defaultValues, form]);
+
+  const watchVariableName = form.watch("variableName") || "myGemini";
+  const handleSubmit = (values: z.infer<typeof formSchema>) => {
+    onSubmit(values);
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[550px] p-0 gap-0 overflow-hidden flex flex-col max-h-[90vh]">
+        <DialogHeader className="p-6 border-b space-y-1">
+          <DialogTitle className="text-xl">Gemini Configuration</DialogTitle>
+          <DialogDescription>
+            Configure the AI model and prompts for this node.
+          </DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(handleSubmit)}
+            className="flex-1 overflow-y-auto p-6 space-y-6"
+          >
+            <FormField
+              control={form.control}
+              name="variableName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Variable Name
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="myGemini"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Use this name to reference the result in other nodes:{" "}
+                    {`{{${watchVariableName}.text}}`}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="systemPrompt"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-base font-medium">
+                    System Prompt (Optional)
+                  </FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="You are a helpful assistant that provides concise answers."
+                      className="min-h-[80px] font-mono text-sm"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription className="text-sm">
+                    Sets the behavior of the assistant. Use {"{{variables}}"}{" "}
+                    for simple values or {"{{json variables}}"} to stringify
+                    objects.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="userPrompt"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-base font-medium">
+                    User Prompt
+                  </FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Summarize this text: {{json httpResponse.data}}"
+                      className="min-h-[120px] font-mono text-sm"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription className="text-sm">
+                    The prompt to send to the AI model. Use {"{{variables}}"}{" "}
+                    for simple values or {"{{json variables}}"} to stringify
+                    objects.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </form>
+        </Form>
+        <DialogFooter className="p-6 border-t">
+          <Button onClick={form.handleSubmit(handleSubmit)}>Save</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};

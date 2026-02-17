@@ -104,23 +104,12 @@ export const HttpRequestDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] p-0 gap-0 overflow-hidden flex flex-col max-h-[90vh]">
-        <DialogHeader className="p-6 border-b flex-row items-center justify-between space-y-0">
-          <div className="space-y-1">
-            <DialogTitle className="text-xl">HTTP Request</DialogTitle>
-            <DialogDescription>
-              Configure settings for HTTP request node.
-            </DialogDescription>
-          </div>
-          <div className="flex items-center gap-2 mr-8">
-            <Button
-              onClick={form.handleSubmit(handleSubmit)}
-              size="sm"
-              className="bg-orange-600 hover:bg-orange-700 text-white px-6"
-            >
-              Save
-            </Button>
-          </div>
+      <DialogContent className="sm:max-w-[550px] p-0 gap-0 overflow-hidden flex flex-col max-h-[90vh]">
+        <DialogHeader className="p-6 border-b space-y-1">
+          <DialogTitle className="text-xl">HTTP Request</DialogTitle>
+          <DialogDescription>
+            Configure settings for HTTP request node.
+          </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form
@@ -141,7 +130,7 @@ export const HttpRequestDialog = ({
                     <Input
                       placeholder="myApiCall"
                       {...field}
-                      className="h-12 focus-visible:ring-orange-600 focus-visible:border-orange-600 border-2"
+                      className="h-12 border-2"
                     />
                   </FormControl>
                   <FormDescription className="text-sm">
@@ -167,7 +156,7 @@ export const HttpRequestDialog = ({
                     defaultValue={field.value}
                   >
                     <FormControl>
-                      <SelectTrigger className="w-full h-12 focus:ring-orange-600 focus:border-orange-600 border-2">
+                      <SelectTrigger className="w-full h-12 border-2">
                         <SelectValue placeholder="Select a method" />
                       </SelectTrigger>
                     </FormControl>
@@ -200,7 +189,7 @@ export const HttpRequestDialog = ({
                     <Input
                       placeholder="https://api.example.com/data"
                       {...field}
-                      className="h-12 focus-visible:ring-orange-600 focus-visible:border-orange-600 border-2"
+                      className="h-12 border-2"
                     />
                   </FormControl>
                   <FormDescription className="text-sm">
@@ -230,7 +219,7 @@ export const HttpRequestDialog = ({
                     <FormControl>
                       <Textarea
                         placeholder={`{\n  "key": "value"\n}`}
-                        className="min-h-[150px] font-mono text-sm border-2 focus-visible:ring-orange-600 focus-visible:border-orange-600"
+                        className="min-h-[150px] font-mono text-sm border-2"
                         {...field}
                       />
                     </FormControl>
@@ -252,6 +241,14 @@ export const HttpRequestDialog = ({
             )}
           </form>
         </Form>
+        <DialogFooter className="p-6 border-t">
+          <Button
+            onClick={form.handleSubmit(handleSubmit)}
+            className="bg-orange-600 hover:bg-orange-700 text-white px-6"
+          >
+            Save
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

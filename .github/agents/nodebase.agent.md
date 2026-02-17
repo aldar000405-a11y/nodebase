@@ -54,8 +54,3 @@ MENTALITY:
 You are a debugger, not a rewriter.
 You are a fixer, not a designer.
 Minimal change. Maximum correctness.
-
-
-
-
-ngrok                                                                                     (Ctrl+C to quit)                                                                                                          Session Status                reconnecting (failed to dial ngrok server with address "connect.ngrok-agent.Version                       3.36.0                                                                      Web Interface                 http://127.0.0.1:4040                                                                                                                                                                 Connections                   ttl     opn     rt1     rt5     p50     p90                                                               0       0       0.00    0.00    0.00    0.00                                                                                                             please fix that and also if why when i open canavas the node ae lost only the previous nodes are always appear
