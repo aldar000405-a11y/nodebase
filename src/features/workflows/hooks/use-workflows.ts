@@ -7,81 +7,24 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
-import { useWorkflowsParams } from "./use-workflows-params";
 
 export const useSuspenseWorkflows = () => {
   const trpc = useTRPC();
-  const [params] = useWorkflowsParams();
-  return useSuspenseQuery(trpc.workflows.getMany.queryOptions(params));
+  return useSuspenseQuery(trpc.workflows.getMany.queryOptions({}));
 };
-
-import { generateSlug } from "random-word-slugs"; // Added import
 
 export const useCreateWorkflow = () => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const [params] = useWorkflowsParams(); // Assuming useWorkflowsParams provides filter/sort for getMany
 
   return useMutation(
     trpc.workflows.create.mutationOptions({
-      // Optimistically update the workflows list
-      onMutate: async (newWorkflowData) => {
-        // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
-        await queryClient.cancelQueries(
-          trpc.workflows.getMany.queryOptions(params),
-        );
-
-        // Snapshot the previous value
-        const previousWorkflows = queryClient.getQueryData(
-          trpc.workflows.getMany.queryOptions(params),
-        );
-
-        // Optimistically update to the new value
-        queryClient.setQueryData(
-          trpc.workflows.getMany.queryOptions(params),
-          (old) => {
-            if (!old) return old;
-            // Generate a temporary ID and slug for the optimistic item
-            const tempId = `temp-${Date.now()}`;
-            const tempName = `New Workflow ${generateSlug(1)}`; // Client-side slug gen
-            return {
-              ...old,
-              items: [
-                {
-                  id: tempId,
-                  name: tempName,
-                  triggerCount: 0,
-                  /* other defaults */ updatedAt: new Date(),
-                  createdAt: new Date(),
-                },
-                ...old.items,
-              ],
-            };
-          },
-        );
-        return { previousWorkflows }; // Context for onError
+      onSuccess: (data) => {
+        toast.success(`Workflow "${data.name}" created successfully`);
+        queryClient.invalidateQueries(trpc.workflows.getMany.queryOptions({}));
       },
-      onError: (err, newWorkflowData, context) => {
-        toast.error(`Failed to create workflow: ${err.message}`);
-        // If the mutation fails, use the context for a rollback
-        queryClient.setQueryData(
-          trpc.workflows.getMany.queryOptions(params),
-          context?.previousWorkflows,
-        );
-      },
-      onSuccess: (data, variables, context) => {
-        // After success, invalidate and let React Query refetch the real data.
-        // The refetch will replace the optimistic entry with the server-confirmed one.
-        void queryClient.invalidateQueries(
-          trpc.workflows.getMany.queryOptions(params),
-        );
-        // The toast is now in NewWorkflowClient.tsx, which is fine.
-      },
-      onSettled: () => {
-        // Ensure all workflows are up-to-date after mutation
-        void queryClient.invalidateQueries(
-          trpc.workflows.getMany.queryOptions(params),
-        );
+      onError: (error) => {
+        toast.error(`Failed to create workflow: ${error.message}`);
       },
     }),
   );
@@ -117,7 +60,7 @@ export const useUpdateWorkflowName = () => {
   return useMutation(
     trpc.workflows.updateName.mutationOptions({
       onSuccess: (data) => {
-        toast.success(`Workflows "${data.name}" updated successfully`);
+        toast.success(`Workflow "${data.name}" updated successfully`);
         queryClient.invalidateQueries(trpc.workflows.getMany.queryOptions({}));
         queryClient.invalidateQueries(
           trpc.workflows.getOne.queryOptions({ id: data.id }),
@@ -136,7 +79,7 @@ export const useUpdateWorkflow = () => {
   return useMutation(
     trpc.workflows.update.mutationOptions({
       onSuccess: (data) => {
-        toast.success(`Workflows "${data.name}" saved successfully`);
+        toast.success(`Workflow "${data.name}" saved successfully`);
         queryClient.invalidateQueries(trpc.workflows.getMany.queryOptions({}));
         queryClient.invalidateQueries(
           trpc.workflows.getOne.queryOptions({ id: data.id }),
@@ -155,7 +98,7 @@ export const useExecuteWorkflow = () => {
   return useMutation(
     trpc.workflows.execute.mutationOptions({
       onSuccess: (data) => {
-        toast.success(`Workflows "${data.name}" executed successfully`);
+        toast.success(`Workflow "${data.name}" executed successfully`);
       },
       onError: (error) => {
         toast.error(`Failed to execute workflow: ${error.message}`);

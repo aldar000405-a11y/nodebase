@@ -1,7 +1,7 @@
 import type { inferInput } from "@trpc/tanstack-react-query";
 import { prefetch, trpc } from "@/trpc/server";
 
-type Input = NonNullable<inferInput<typeof trpc.workflows.getMany>>;
+type Input = inferInput<typeof trpc.workflows.getMany>;
 
 //  prefetch all workflows
 

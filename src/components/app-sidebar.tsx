@@ -33,7 +33,7 @@ const menuItem = [
     title: "Main",
     items: [
       { title: "Workflows", icon: FolderOpenIcon, url: "/workflows" },
-      { title: "Credentials", icon: KeyIcon, url: "/credentials" },
+      { title: "Credentials", icon: KeyIcon, url: "/credintials" },
       { title: "Executions", icon: HistoryIcon, url: "/executions" },
     ],
   },
@@ -47,10 +47,12 @@ export const AppSidebar = () => {
   const user = session?.user;
   const utils = trpc.useUtils();
 
-  // Prefetch workflows data on hover for faster navigation
+  // Prefetch data on hover for faster navigation
   const handlePrefetch = (url: string) => {
     if (url === "/workflows") {
       utils.workflows.getMany.prefetch({ page: 1, pageSize: 5, search: "" });
+    } else if (url === "/credintials") {
+      utils.credentials.getMany.prefetch({ page: 1, pageSize: 5, search: "" });
     }
   };
 

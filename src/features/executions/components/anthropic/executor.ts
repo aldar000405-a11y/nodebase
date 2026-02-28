@@ -5,6 +5,7 @@ import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { NonRetriableError } from "inngest";
 import type { NodeExecutor } from "@/features/executions/types";
 import { anthropicChannel } from "@/inngest/channels/anthropic";
+import { prisma } from "@/lib/prisma";
 
 Handlebars.registerHelper("json", (context) => {
   const jsonString = JSON.stringify(context, null, 2);
@@ -14,6 +15,7 @@ Handlebars.registerHelper("json", (context) => {
 
 type AnthropicData = {
   variableName?: string;
+  credentialId?: string;
   systemPrompt?: string;
   userPrompt?: string;
 };
@@ -41,6 +43,15 @@ export const anthropicExecutor: NodeExecutor<AnthropicData> = async ({
     );
     throw new NonRetriableError("Anthropic node: Variable name is missing");
   }
+  if (!data.credentialId) {
+    await publish(
+      anthropicChannel().status({
+        nodeId,
+        status: "error",
+      }),
+    );
+    throw new NonRetriableError("Anthropic node: Credential is missing");
+  }
 
   if (!data.userPrompt) {
     await publish(
@@ -57,16 +68,26 @@ export const anthropicExecutor: NodeExecutor<AnthropicData> = async ({
     : "You are a helpful assistant.";
   const userPrompt = Handlebars.compile(data.userPrompt)(context);
 
+   const credential = await step.run("get-credential", () => {
+        return prisma.credential.findUnique({
+          where: {
+            id: data.credentialId,
+          },
+        });
+      });
+  
+      if (!credential) {
+        throw new NonRetriableError("Anthropic node: Credential not found");
+      }
+
   // const credentialValue = process.env.ANTHROPIC_API_KEY;
   // const anthropic = createAnthropic({
   //   apiKey: credentialValue,
   // });
 
  
-const credentialValue = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
 const openai = createGoogleGenerativeAI({
-  apiKey: credentialValue,
-  baseURL: "https://generativelanguage.googleapis.com/v1beta",
+  apiKey: credential.value,
 });
 
   try {

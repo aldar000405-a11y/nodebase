@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -40,6 +41,13 @@ type LoginFormValues = z.infer<typeof formSchema>;
 
 export function LoginForm() {
   const router = useRouter();
+  const { data: session } = authClient.useSession();
+
+  useEffect(() => {
+    if (session) {
+      router.replace("/workflows");
+    }
+  }, [session, router]);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(formSchema),
@@ -55,7 +63,7 @@ export function LoginForm() {
 
       const normalizedEmail = values.email.toLowerCase().trim();
 
-      let { error } = await authClient.signIn.email({
+      const { error } = await authClient.signIn.email({
         email: normalizedEmail,
         password: values.password,
       });
@@ -74,7 +82,7 @@ export function LoginForm() {
       toast.success("✅ Success! Redirecting...");
 
       setTimeout(() => {
-        router.push("/");
+        router.push("/workflows");
       }, 500);
     } catch (error: unknown) {
       if (toastId !== undefined) toast.dismiss(toastId);

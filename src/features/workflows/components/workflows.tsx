@@ -165,7 +165,6 @@ export const WorkflowsHeader = ({ disabled }: { disabled?: boolean }) => {
       onNew={handleCreate}
       newButtonLabel="New Workflow"
       disabled={disabled}
-      isCreating={isPending}
     />
   );
 };

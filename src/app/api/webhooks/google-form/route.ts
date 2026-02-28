@@ -1,15 +1,31 @@
 import { sendWorkflowExecution } from "@/inngest/utils";
 import { type NextRequest, NextResponse } from "next/server";
+import crypto from "node:crypto";
+
+const verifyWebhookSecret = (request: NextRequest): boolean => {
+  const secret = process.env.WEBHOOK_SECRET;
+  if (!secret) return true; // Skip verification if no secret is configured
+  const providedSecret = request.headers.get("x-webhook-secret");
+  if (!providedSecret) return false;
+  return crypto.timingSafeEqual(
+    Buffer.from(secret),
+    Buffer.from(providedSecret),
+  );
+};
 
 export async function POST(request: NextRequest) {
-  console.log("--- Google Form Webhook POST received ---");
   try {
+    if (!verifyWebhookSecret(request)) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const url = new URL(request.url);
     const workflowId = url.searchParams.get("workflowId");
-    console.log("Extracted workflowId:", workflowId);
 
     if (!workflowId) {
-      console.error("Missing required query parameter: workflowId");
       return NextResponse.json(
         {
           success: false,
@@ -19,7 +35,6 @@ export async function POST(request: NextRequest) {
       );
     }
     const body = await request.json();
-    console.log("Received request body:", JSON.stringify(body, null, 2));
 
     const formData = {
       formId: body.formId,
@@ -30,15 +45,7 @@ export async function POST(request: NextRequest) {
       responses: body.responses,
       raw: body,
     };
-    console.log("Constructed formData:", JSON.stringify(formData, null, 2));
 
-    // trigger and inngest job
-    console.log("Calling sendWorkflowExecution with:", {
-      workflowId,
-      initialData: {
-        googleForm: formData,
-      },
-    });
     await sendWorkflowExecution({
       workflowId,
       initialData: {
@@ -46,13 +53,12 @@ export async function POST(request: NextRequest) {
       },
     });
 
-     return NextResponse.json(
-           { success: true },
-           { status: 200 },
-          );
-           } catch (error) {
-            console.error("Google form webhook error:", error); 
-    console.error("Google form webhook error:", error);
+    return NextResponse.json(
+      { success: true },
+      { status: 200 },
+    );
+  } catch {
+    console.error("Google form webhook error");
     return NextResponse.json(
       { success: false, error: "Failed to process Google Form submission" },
       { status: 500 },

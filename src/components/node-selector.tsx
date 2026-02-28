@@ -39,18 +39,6 @@ const triggerNodes: NodeTypeOption[] = [
     icon: "/logos/googleform.svg",
   },
   {
-    type: NodeType.OPENAI,
-    label: "OpenAI",
-    description: "Uses OpenAI generate text",
-    icon: "/logos/openai.svg",
-  },
-  {
-    type: NodeType.ANTHROPIC,
-    label: "Anthropic",
-    description: "Uses Anthropic generate text",
-    icon: "/logos/anthropic.svg",
-  },
-  {
     type: NodeType.STRIPE_TRIGGER,
     label: "Stripe Event",
     description: "Runs the flow when a Stripe event is captured.",
