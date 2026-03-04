@@ -1,4 +1,3 @@
-import { CredentialView } from "@/features/credentials/components/credential";
 import { requireAuth } from "@/lib/auth-utils";
 import { CredentialsView } from "@/features/credentials/components/credential";
 import { prefetchCredential } from "@/features/credentials/server/prefetch";

@@ -23,6 +23,7 @@ type AnthropicData = {
 export const anthropicExecutor: NodeExecutor<AnthropicData> = async ({
   data,
   nodeId,
+  userId,
   context,
   step,
   publish,
@@ -68,19 +69,25 @@ export const anthropicExecutor: NodeExecutor<AnthropicData> = async ({
     : "You are a helpful assistant.";
   const userPrompt = Handlebars.compile(data.userPrompt)(context);
 
-   const credential = await step.run("get-credential", () => {
+   const credential = await step.run(`get-credential-${nodeId}`, () => {
         return prisma.credential.findUnique({
           where: {
             id: data.credentialId,
+            userId,
           },
         });
       });
   
       if (!credential) {
+        await publish(
+          anthropicChannel().status({
+            nodeId,
+            status: "error",
+          })
+        );
         throw new NonRetriableError("Anthropic node: Credential not found");
       }
 
-  // const credentialValue = process.env.ANTHROPIC_API_KEY;
   // const anthropic = createAnthropic({
   //   apiKey: credentialValue,
   // });
@@ -92,7 +99,7 @@ const openai = createGoogleGenerativeAI({
 
   try {
     const { text } = await step.ai.wrap(
-      "anthropic-generate-text",
+      `anthropic-generate-text-${nodeId}`,
       generateText,
       {
         model: openai("gemini-2.5-flash"),

@@ -115,7 +115,7 @@ export function LoginForm() {
                   type="button"
                   disabled={isPending}
                   onClick={() =>
-                    authClient.signIn.oauth({ provider: "github" })
+                    authClient.signIn.social({ provider: "github" })
                   }
                 >
                   <Image
@@ -132,7 +132,7 @@ export function LoginForm() {
                   type="button"
                   disabled={isPending}
                   onClick={() =>
-                    authClient.signIn.oauth({ provider: "google" })
+                    authClient.signIn.social({ provider: "google" })
                   }
                 >
                   <Image

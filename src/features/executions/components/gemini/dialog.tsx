@@ -97,9 +97,9 @@ export const GeminiDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[550px] p-0 gap-0 overflow-hidden flex flex-col max-h-[90vh]">
-        <DialogHeader className="p-6 border-b space-y-1">
-          <DialogTitle className="text-xl">Gemini Configuration</DialogTitle>
+      <DialogContent className="sm:max-w-[550px] p-0 gap-0 overflow-hidden flex flex-col">
+        <DialogHeader className="p-4 border-b space-y-0.5">
+          <DialogTitle>Gemini Configuration</DialogTitle>
           <DialogDescription>
             Configure the AI model and prompts for this node.
           </DialogDescription>
@@ -107,56 +107,24 @@ export const GeminiDialog = ({
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(handleSubmit)}
-            className="flex-1 overflow-y-auto p-6 space-y-6"
+            className="p-4 space-y-3"
           >
             <FormField
               control={form.control}
               name="variableName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>
-                    Variable Name
-                  </FormLabel>
+                  <FormLabel>Variable Name</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="myGemini"
-                      {...field}
-                    />
+                    <Input placeholder="myGemini" {...field} />
                   </FormControl>
                   <FormDescription>
-                    Use this name to reference the result in other nodes:{" "}
-                    {`{{${watchVariableName}.text}}`}
+                    Reference as {`{{${watchVariableName}.text}}`}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
-            <FormField
-              control={form.control}
-              name="systemPrompt"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-base font-medium">
-                    System Prompt (Optional)
-                  </FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="You are a helpful assistant that provides concise answers."
-                      className="min-h-[80px] font-mono text-sm"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription className="text-sm">
-                    Sets the behavior of the assistant. Use {"{{variables}}"}{" "}
-                    for simple values or {"{{json variables}}"} to stringify
-                    objects.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
 
             <FormField
               control={form.control}
@@ -167,10 +135,7 @@ export const GeminiDialog = ({
                   <Select
                     onValueChange={field.onChange}
                     value={field.value}
-                    disabled={
-                      isLoadingCredentials
-                    || !credentials?.length
-                    }
+                    disabled={isLoadingCredentials || !credentials?.length}
                   >
                     <FormControl>
                       <SelectTrigger className="w-full">
@@ -181,12 +146,7 @@ export const GeminiDialog = ({
                       {credentials?.map((cred) => (
                         <SelectItem key={cred.id} value={cred.id}>
                           <div className="flex items-center gap-2">
-                            <Image
-                              src="/logos/gemini.svg"
-                              alt="Gemini"
-                              width={16}
-                              height={16}
-                            />
+                            <Image src="/logos/gemini.svg" alt="Gemini" width={16} height={16} />
                             {cred.name}
                           </div>
                         </SelectItem>
@@ -200,23 +160,37 @@ export const GeminiDialog = ({
 
             <FormField
               control={form.control}
-              name="userPrompt"
+              name="systemPrompt"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-base font-medium">
-                    User Prompt
-                  </FormLabel>
+                  <FormLabel>System Prompt (Optional)</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Summarize this text: {{json httpResponse.data}}"
-                      className="min-h-[120px] font-mono text-sm"
+                      placeholder="You are a helpful assistant that provides concise answers."
+                      className="min-h-[40px] font-mono text-sm"
                       {...field}
                     />
                   </FormControl>
-                  <FormDescription className="text-sm">
-                    The prompt to send to the AI model. Use {"{{variables}}"}{" "}
-                    for simple values or {"{{json variables}}"} to stringify
-                    objects.
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="userPrompt"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>User Prompt</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Summarize this text: {{json httpResponse.data}}"
+                      className="min-h-[60px] font-mono text-sm"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Use {"{{variables}}"}  or {"{{json variables}}"}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -224,7 +198,7 @@ export const GeminiDialog = ({
             />
           </form>
         </Form>
-        <DialogFooter className="p-6 border-t">
+        <DialogFooter className="p-4 border-t">
           <Button onClick={form.handleSubmit(handleSubmit)}>Save</Button>
         </DialogFooter>
       </DialogContent>

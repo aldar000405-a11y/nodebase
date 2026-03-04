@@ -1,12 +1,14 @@
-import { NodeType } from "@/generated/prisma";
-import type { NodeExecutor } from "../types";
-import { manualTriggerExecutor } from "@/features/triggers/manual-trigger/executor";
-import { httpRequestExecutor } from "../components/http-request/executor";
-import {googleFormTriggerExecutor} from "@/features/triggers/google-form-trigger/executor";
 import { stripeTriggerExecutor } from "@/features/triggers/components/stripe-trigger/executor";
-import { geminiExecutor } from "../components/gemini/executor";
-import { openAiExecutor } from "../components/openai/executor";
+import { googleFormTriggerExecutor } from "@/features/triggers/google-form-trigger/executor";
+import { manualTriggerExecutor } from "@/features/triggers/manual-trigger/executor";
+import { NodeType } from "@/generated/prisma";
 import { anthropicExecutor } from "../components/anthropic/executor";
+import { discordExecutor } from "../components/discord/executor";
+import { geminiExecutor } from "../components/gemini/executor";
+import { httpRequestExecutor } from "../components/http-request/executor";
+import { openAiExecutor } from "../components/openai/executor";
+import { slackExecutor } from "../components/slack/executor";
+import type { NodeExecutor } from "../types";
 
 export const executorRegistry: Record<NodeType, NodeExecutor> = {
   [NodeType.MANUAL_TRIGGER]: manualTriggerExecutor,
@@ -17,6 +19,8 @@ export const executorRegistry: Record<NodeType, NodeExecutor> = {
   [NodeType.GEMINI]: geminiExecutor,
   [NodeType.ANTHROPIC]: anthropicExecutor,
   [NodeType.OPENAI]: openAiExecutor,
+  [NodeType.DISCORD]: discordExecutor,
+  [NodeType.SLACK]: slackExecutor,
 };
 
 export const getExecutor = (type: NodeType): NodeExecutor => {

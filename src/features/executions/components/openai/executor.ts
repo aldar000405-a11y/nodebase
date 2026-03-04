@@ -23,6 +23,7 @@ type OpenAiData = {
 export const openAiExecutor: NodeExecutor<OpenAiData> = async ({
   data,
   nodeId,
+  userId,
   context,
   step,
   publish,
@@ -69,16 +70,23 @@ export const openAiExecutor: NodeExecutor<OpenAiData> = async ({
     : "You are a helpful assistant.";
   const userPrompt = Handlebars.compile(data.userPrompt)(context);
 
-  const credential = await step.run("get-credential", () => {
+  const credential = await step.run(`get-credential-${nodeId}`, () => {
         return prisma.credential.findUnique({
           where: {
             id: data.credentialId,
+            userId,
           },
         });
       });
   
       if (!credential) {
-        throw new NonRetriableError("OpenAI node: Credential not found");
+        await publish(
+          openAiChannel().status({
+            nodeId,
+            status: "error",
+          })
+        );
+         throw new NonRetriableError("OpenAI node: Credential not found");
       }
       
 
@@ -92,7 +100,7 @@ const openai = createGoogleGenerativeAI({
 
   try {
     const { text } = await step.ai.wrap(
-      "openai-generate-text",
+      `openai-generate-text-${nodeId}`,
       generateText,
       {
         model: openai("gemini-2.5-flash"),

@@ -11,6 +11,8 @@ import { stripeTriggerChannel } from "./channels/stripe-trigger";
 import { geminiChannel } from "./channels/gemini";
 import { openAiChannel } from "./channels/openai";
 import { anthropicChannel } from "./channels/anthropic";
+import { discordChannel } from "./channels/discord";
+import { slackChannel } from "./channels/slack";
 
 // Convert (()) syntax to {{}} for Handlebars compatibility
 const convertTemplateVariables = (text: string): string => {
@@ -49,6 +51,8 @@ export const executeWorkflow = inngest.createFunction(
       geminiChannel(),
       openAiChannel(),
       anthropicChannel(),
+      discordChannel(),
+      slackChannel(),
     ],
   },
   async ({ event, step, publish }) => {
@@ -66,16 +70,19 @@ export const executeWorkflow = inngest.createFunction(
         },
       });
 
-      try {
+    
         return topologicalSort(workflow.nodes, workflow.connections);
-      } catch (error: any) {
-        if (error.message.includes("Cyclic dependency")) {
-          throw new NonRetriableError(
-            `Workflow failed: Cyclic dependency detected. Node: ${error.message.split('"')[1] || "unknown"}`,
-          );
-        }
-        throw error;
-      }
+    });
+
+    const userId = await step.run("find-user-id", async () => {
+      const workflow = await prisma.workflow.findUniqueOrThrow({
+        where: { id: workflowId },
+        select: {
+         userId: true,
+        },
+      });
+
+      return workflow.userId;
     });
 
     // initialize the context with any initial data from the trigger
@@ -84,13 +91,10 @@ export const executeWorkflow = inngest.createFunction(
     // Execute each node
     for (const node of sortedNodes) {
       const executor = getExecutor(node.type as NodeType);
-      // Preprocess node data to convert (()) to {{}} template syntax
-      const processedData = preprocessNodeData(
-        node.data as Record<string, unknown>,
-      );
       context = await executor({
-        data: processedData,
+        data: node.data as Record<string, unknown>,
         nodeId: node.id,
+        userId,
         context,
         step,
         publish,

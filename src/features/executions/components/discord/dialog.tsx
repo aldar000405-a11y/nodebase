@@ -24,17 +24,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useCredentialsByType } from "@/features/credentials/hooks/use-credentials";
-import { CredentialType } from "@/generated/prisma";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import Image from "next/image";
-
 
 
 const formSchema = z.object({
@@ -45,37 +34,36 @@ const formSchema = z.object({
       message:
         "Variable name must start with a letter or underscore and contain only alphanumeric characters and underscores",
     }),
-    credentialId: z.string().min(1, "Credential is required"),
-  systemPrompt: z.string().optional(),
-  userPrompt: z.string().min(1, "User prompt is required"),
+    username: z.string().optional(),
+    content: z
+    .string()
+    .min(1, "Message content is required")
+    .max(2000, "Discord Messages cannot exceed 2000 characters"),
+    webhookUrl: z.string().min(1, "Webhook URL is required"), 
 });
 
-export type openAIFormValues = z.infer<typeof formSchema>;
+export type DiscordFormValues = z.infer<typeof formSchema>;
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (values: z.infer<typeof formSchema>) => void;
-  defaultValues?: Partial<openAIFormValues>;
+  defaultValues?: Partial<DiscordFormValues>;
 }
 
-export const OpenAIDialog = ({
+export const DiscordDialog = ({
   open,
   onOpenChange,
   onSubmit,
   defaultValues = {},
 }: Props) => {
-   const { 
-      data: credentials, 
-      isLoading: isLoadingCredentials,
-    } = useCredentialsByType(CredentialType.OPENAI);  
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       variableName: defaultValues.variableName || "",
-      credentialId: defaultValues.credentialId || "",
-      systemPrompt: defaultValues.systemPrompt || "",
-      userPrompt: defaultValues.userPrompt || "",
+      username: defaultValues.username || "",
+      content: defaultValues.content || "",
+      webhookUrl: defaultValues.webhookUrl || "",
     },
   });
 
@@ -83,14 +71,14 @@ export const OpenAIDialog = ({
     if (open) {
       form.reset({
         variableName: defaultValues.variableName || "",
-        credentialId: defaultValues.credentialId || "",
+        credentialentialId: defaultValues.credentialentialId || "",
         systemPrompt: defaultValues.systemPrompt || "",
         userPrompt: defaultValues.userPrompt || "",
       });
     }
   }, [open, defaultValues, form]);
 
-  const watchVariableName = form.watch("variableName") || "myopenAI";
+  const watchVariableName = form.watch("variableName") || "myDiscord";
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
     onSubmit(values);
     onOpenChange(false);
@@ -100,9 +88,9 @@ export const OpenAIDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[550px] p-0 gap-0 overflow-hidden flex flex-col">
         <DialogHeader className="p-4 border-b space-y-0.5">
-          <DialogTitle>OpenAI Configuration</DialogTitle>
+          <DialogTitle>Discord Configuration</DialogTitle>
           <DialogDescription>
-            Configure the AI model and prompts for this node.
+            Configure the Discord webhook settings for this node.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -117,7 +105,7 @@ export const OpenAIDialog = ({
                 <FormItem>
                   <FormLabel>Variable Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="myOpenAi" {...field} />
+                    <Input placeholder="myDiscord" {...field} />
                   </FormControl>
                   <FormDescription>
                     Reference as {`{{${watchVariableName}.text}}`}
@@ -127,71 +115,59 @@ export const OpenAIDialog = ({
               )}
             />
 
+            
             <FormField
               control={form.control}
-              name="credentialId"
+              name="webhookUrl"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>OpenAI Credential</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
-                    disabled={isLoadingCredentials || !credentials?.length}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder={isLoadingCredentials ? "Loading..." : "Select a credential"} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {credentials?.map((credential) => (
-                        <SelectItem key={credential.id} value={credential.id}>
-                          <div className="flex items-center gap-2">
-                            <Image src="/logos/openai.svg" alt="OpenAI" width={16} height={16} />
-                            {credential.name}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="systemPrompt"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>System Prompt (Optional)</FormLabel>
+                  <FormLabel>Webhook URL</FormLabel>
                   <FormControl>
-                    <Textarea
-                      placeholder="You are a helpful assistant that provides concise answers."
-                      className="min-h-[40px] font-mono text-sm"
+                    <Input
+                      placeholder="https://discord.com/api/webhooks/..."
                       {...field}
                     />
                   </FormControl>
+                  <FormDescription>
+                    Channel Settings {"->"} Integrations {"->"} Webhooks {"->"} New Webhook
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
             <FormField
               control={form.control}
-              name="userPrompt"
+              name="content"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>User Prompt</FormLabel>
+                  <FormLabel>Message Content</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Summarize this text: {{json httpResponse.data}}"
-                      className="min-h-[60px] font-mono text-sm"
+                      placeholder="Summary: {{myGemini.text}}"
+                      className="min-h-[40px] font-mono text-sm"
                       {...field}
                     />
                   </FormControl>
                   <FormDescription>
                     Use {"{{variables}}"} or {"{{json variables}}"}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+
+            <FormField
+              control={form.control}
+              name="username"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Bot Username (Optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Workflow Bot" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Override the webhook's default username
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
