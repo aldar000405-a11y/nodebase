@@ -42,7 +42,8 @@ const menuItem = [
 export const AppSidebar = () => {
   const pathname = usePathname();
   const router = useRouter();
-  const { hasActiveSubscription, isLoading } = useHasActiveSubscription();
+  const { hasActiveSubscription, isError, isLoading } =
+    useHasActiveSubscription();
   const { data: session } = authClient.useSession();
   const user = session?.user;
   const utils = trpc.useUtils();
@@ -121,7 +122,7 @@ export const AppSidebar = () => {
 
       <SidebarFooter>
         <SidebarMenu>
-          {!isLoading && !hasActiveSubscription && (
+          {!isLoading && !isError && !hasActiveSubscription && (
             <SidebarMenuItem>
               <SidebarMenuButton
                 tooltip="upgrade to pro"

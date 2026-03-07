@@ -5,11 +5,12 @@ import type { SearchParams } from "nuqs";
 import { Suspense } from "react";
 import { prefetchCredentials } from "@/features/credentials/server/prefetch";
 import {
-  CredentialsContent,
-  CredentialsShell,
+  CredentialsList,
+  CredentialsContainer,
+  CredentialsError,
   CredentialsLoading,
-  CredentialsErrorBoundary,
 } from "@/features/credentials/components/credentials";
+import { ErrorBoundary } from "react-error-boundary";
 
 type Props = {
   searchParams: Promise<SearchParams>;
@@ -21,15 +22,15 @@ const Page = async ({ searchParams }: Props) => {
   await prefetchCredentials(params);
 
   return (
-    <CredentialsShell>
+    <CredentialsContainer>
       <HydrateClient>
-        <CredentialsErrorBoundary>
+        <ErrorBoundary fallback={<CredentialsError />}>
           <Suspense fallback={<CredentialsLoading />}>
-            <CredentialsContent />
+            <CredentialsList />
           </Suspense>
-        </CredentialsErrorBoundary>
+        </ErrorBoundary>
       </HydrateClient>
-    </CredentialsShell>
+    </CredentialsContainer>
   );
 };
 

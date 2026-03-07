@@ -7,15 +7,21 @@ import {
 } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
-import { NodeType } from "@/generated/prisma";
+import { ExecutionStatus, NodeType } from "@/generated/prisma";
 import { PAGINATION } from "@/config/constants";
 import { inngest } from "@/inngest/client";
-import { sendWorkflowExecution } from "@/inngest/utils";
+import { createId } from "@paralleldrive/cuid2";
 
 export const workflowsRouter = createTRPCRouter({
-  execute: premiumProcedure
+  execute: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input, ctx }) => {
+      if (!ctx.hasPremium) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You must have an active subscription to execute workflows.",
+        });
+      }
       const workflow = await prisma.workflow.findUniqueOrThrow({
         where: {
           id: input.id,
@@ -23,9 +29,39 @@ export const workflowsRouter = createTRPCRouter({
         },
       });
 
-      await sendWorkflowExecution({
-        workflowId: input.id,
+      const inngestEventId = createId();
+
+      await prisma.execution.create({
+        data: {
+          workflowId: input.id,
+          status: ExecutionStatus.RUNNING,
+          inngestEventId,
+        },
       });
+
+      try {
+        await inngest.send({
+          name: "workflows/execute.workflow",
+          data: {
+            workflowId: input.id,
+          },
+          id: inngestEventId,
+        });
+      } catch (error) {
+        await prisma.execution.update({
+          where: { inngestEventId },
+          data: {
+            status: ExecutionStatus.FAILED,
+            completedAt: new Date(),
+            error:
+              error instanceof Error
+                ? error.message
+                : "Failed to queue workflow execution",
+          },
+        });
+
+        throw error;
+      }
 
       return workflow;
     }),

@@ -2,7 +2,7 @@ import { NonRetriableError } from "inngest";
 import { inngest } from "./client";
 import prisma from "@/lib/db";
 import { topologicalSort } from "./utils";
-import { NodeType } from "@/generated/prisma";
+import { ExecutionStatus, NodeType } from "@/generated/prisma";
 import { getExecutor } from "@/features/executions/lib/executor-registry";
 import { httpRequestChannel } from "./channels/http-request";
 import { manualTriggerChannel } from "./channels/manual-trigger";
@@ -14,32 +14,20 @@ import { anthropicChannel } from "./channels/anthropic";
 import { discordChannel } from "./channels/discord";
 import { slackChannel } from "./channels/slack";
 
-// Convert (()) syntax to {{}} for Handlebars compatibility
-const convertTemplateVariables = (text: string): string => {
-  // Match ((content)) where content can contain anything except double closing parens
-  return text.replace(/\(\((.+?)\)\)/g, "{{$1}}");
-};
-
-// Preprocess node data to convert template syntax
-const preprocessNodeData = (
-  data: Record<string, unknown>,
-): Record<string, unknown> => {
-  const processed: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(data)) {
-    if (typeof value === "string") {
-      const converted = convertTemplateVariables(value);
-      processed[key] = converted;
-    } else {
-      processed[key] = value;
-    }
-  }
-  return processed;
-};
-
 export const executeWorkflow = inngest.createFunction(
   {
     id: "execute-workflow",
     retries: 0,
+    onFailure: async ({ event, step }) => {
+      return prisma.execution.update({
+        where: { inngestEventId: event.data.event.id },
+        data: {
+          status: ExecutionStatus.FAILED,
+          error: event.data.error.message,
+          errorStack: event.data.error.stack,
+        },
+      });
+    },
   },
   {
     event: "workflows/execute.workflow",
@@ -56,10 +44,11 @@ export const executeWorkflow = inngest.createFunction(
     ],
   },
   async ({ event, step, publish }) => {
+    const inngestEventId = event.id;
     const workflowId = event.data.workflowId;
 
-    if (!workflowId) {
-      throw new NonRetriableError("Workflow ID is missing");
+    if (!inngestEventId || !workflowId) {
+      throw new NonRetriableError("Event ID or Workflow ID is missing");
     }
     const sortedNodes = await step.run("Prepare-workflow", async () => {
       const workflow = await prisma.workflow.findUniqueOrThrow({
@@ -100,6 +89,17 @@ export const executeWorkflow = inngest.createFunction(
         publish,
       });
     }
+
+    await step.run("update-execution", async () => {
+      return prisma.execution.update({
+        where: { inngestEventId },
+        data: {
+          status: ExecutionStatus.SUCCESS,
+          completedAt: new Date(),
+          output: context,
+        },
+      })
+    });
 
     return {
       workflowId,

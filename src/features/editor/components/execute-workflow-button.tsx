@@ -6,6 +6,7 @@ import {
   useUpdateWorkflow,
 } from "@/features/workflows/hooks/use-workflows";
 import { editorAtom } from "../store/atoms";
+import { useUpgradeModel } from "@/hooks/use-upgrade-model";
 
 export const ExecuteWorkflowButton = ({
   workflowId,
@@ -15,6 +16,7 @@ export const ExecuteWorkflowButton = ({
   const editor = useAtomValue(editorAtom);
   const saveWorkflow = useUpdateWorkflow({ silent: true });
   const executeWorkflow = useExecuteWorkflow();
+  const { handleError, model } = useUpgradeModel();
   const handleExecute = async () => {
     if (!editor) {
       return;
@@ -27,18 +29,22 @@ export const ExecuteWorkflowButton = ({
         edges: editor.getEdges(),
       });
       await executeWorkflow.mutateAsync({ id: workflowId });
-    } catch {
+    } catch (error) {
+      handleError(error);
       return;
     }
   };
   return (
-    <Button
-      size="lg"
-      onClick={() => void handleExecute()}
-      disabled={executeWorkflow.isPending || saveWorkflow.isPending}
-    >
-      <FlaskConicalIcon className="size-4" />
-      Execute workflow
-    </Button>
+    <>
+      {model}
+      <Button
+        size="lg"
+        onClick={() => void handleExecute()}
+        disabled={executeWorkflow.isPending || saveWorkflow.isPending}
+      >
+        <FlaskConicalIcon className="size-4" />
+        Execute workflow
+      </Button>
+    </>
   );
 };

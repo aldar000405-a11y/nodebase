@@ -10,6 +10,7 @@ import {
   EntityPagination,
   EntitySearch,
   ErrorView,
+  LoadingView,
 } from "@/components/entity-components";
 import {
   useRemoveCredential,
@@ -19,19 +20,24 @@ import { useRouter } from "next/navigation";
 import { useEntitySearch } from "@/hooks/use-entity-search";
 import { useCredentialsParams } from "../hooks/use-credentials-params";
 import { CredentialType } from "@/generated/prisma";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
 
-
-
+type CredentialListItem = {
+  id: string;
+  name: string;
+  type: CredentialType;
+  createdAt: Date;
+  updatedAt: Date;
+  userId: string;
+  triggerCount: number;
+};
 
 export const CredentialsEmpty = () => {
   const router = useRouter();
 
   const handleCreate = () => {
    
-      router.push("/credintials/create");
+      router.push("/credentials/create");
  
   };
 
@@ -53,14 +59,7 @@ const credentialLogos: Record<CredentialType, string> = {
 export const CredentialsItem = ({
    data,
   }: {
-     data: {
-       id: string;
-       name: string;
-       type: CredentialType;
-       createdAt: Date;
-       updatedAt: Date;
-       triggerCount: number;
-     }
+     data: CredentialListItem
      }) => {
   const removeCredential = useRemoveCredential();
 
@@ -72,7 +71,7 @@ export const CredentialsItem = ({
 
   return (
     <EntityItem
-      href={`/credintials/${data.id}`}
+      href={`/credentials/${data.id}`}
       title={data.name}
       subtitle={
         <>
@@ -126,19 +125,13 @@ export const CredentialsList = () => {
 };
 
 export const CredentialsHeader = ({ disabled }: { disabled?: boolean }) => {
-  const router = useRouter();
-
-  const handleCreate = () => {
-    router.push("/credintials/create");
-  };
 
   return (
     <EntityHeader
-      title="Credentials"
-      description="Manage your credentials."
-      onNew={handleCreate}
-      newButtonLabel="New Credential"
-      disabled={disabled}
+     title="credentials"
+      description="Create and manage your credentials."
+      newButtonHref="/credentials/new"
+      newButtonLabel="new credential"
     />
   );
 };
@@ -157,19 +150,6 @@ export const CredentialsPagination = () => {
   );
 };
 
-export const CredentialsShell = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <div className="p-4 md:px-10 md:py-6 h-full">
-      <div className="mx-auto max-w-screen-xl w-full flex flex-col gap-y-8 h-full">
-        <CredentialsHeader />
-        <div className="gap-y-4 h-full flex flex-col">
-          <CredentialsSearch />
-          {children}
-        </div>
-      </div>
-    </div>
-  );
-};
 
 export const CredentialsContent = () => {
   return (
@@ -188,7 +168,6 @@ export const credentialsContainer = ({
   return (
     <EntityContainer
       header={<CredentialsHeader />}
-      search={<CredentialsSearch />}
       pagination={<CredentialsPagination />}
     >
       {children}
@@ -199,50 +178,9 @@ export const credentialsContainer = ({
 export const CredentialsContainer = credentialsContainer;
 
 export const CredentialsLoading = () => {
-  return (
-    <div className="flex flex-col h-full gap-y-4">
-      <div className="flex flex-col gap-y-4">
-        {/* Skeleton cards matching Credential items */}
-        {["skeleton-1", "skeleton-2", "skeleton-3"].map((key) => (
-          <Card key={key} className="p-4 shadow-none">
-            <CardContent className="flex flex-row items-center justify-between p-0">
-              <div className="flex items-center gap-3">
-                <Skeleton className="size-8 rounded" />
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-32" />
-                  <Skeleton className="h-3 w-48" />
-                </div>
-              </div>
-              <Skeleton className="size-8 rounded" />
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-      {/* Skeleton pagination */}
-      <div className="flex justify-between items-center gap-x-2 w-full">
-        <Skeleton className="h-4 w-24" />
-        <div className="flex items-center space-x-2">
-          <Skeleton className="h-8 w-20" />
-          <Skeleton className="h-8 w-16" />
-        </div>
-      </div>
-    </div>
-  );
-};
-export const CredentialsError = ({ message }: { message?: string }) => {
-  return <ErrorView message={message ?? "Error loading credentials."} />;
+  return <LoadingView message="Loading credentials..." />; 
+}
+export const CredentialsError = () => {
+  return <ErrorView message="Error loading credentials." />;
 };
 
-export const CredentialsErrorBoundary = ({
-  children,
-}: {
-  children: React.ReactNode;
-}) => {
-  return (
-    <ErrorBoundary
-      fallbackRender={({ error }) => <CredentialsError message={error.message} />}
-    >
-      {children}
-    </ErrorBoundary>
-  );
-};
