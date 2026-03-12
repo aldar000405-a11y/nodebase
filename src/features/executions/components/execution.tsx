@@ -1,6 +1,6 @@
 "use client";
 
-import { ExecutionStatus } from "@prisma/prisma";
+import { ExecutionStatus } from "@/generated/prisma";
 import { CheckCircle2Icon, ClockIcon, Loader2Icon, XCircleIcon } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
@@ -57,7 +57,7 @@ export const ExecutionView = ({
           {getStatusIcon(execution.status)}
           <div>
           <CardTitle>
-            {formatStatus(execution.name)}
+            {formatStatus(execution.status)}
             </CardTitle>
             <CardDescription>
               Execution for {execution.workflow.name}
@@ -123,7 +123,7 @@ export const ExecutionView = ({
                 mb-2">
                   Error
                 </p>
-                <p classNamee="text-sm text-red-800 font-mono">
+                <p className="text-sm text-red-800 font-mono">
                   {execution.error}
                 </p>
               </div>

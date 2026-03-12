@@ -7,7 +7,8 @@ export const useUpgradeModel = () => {
 
   const handleError = (error: unknown) => {
     if (error instanceof TRPCClientError) {
-      if (error.data?.code === "FORBIDDEN") {
+      const code = error.data?.code ?? error.shape?.data?.code;
+      if (code === "FORBIDDEN") {
         setOpen(true);
         return true;
       }

@@ -8,22 +8,19 @@ export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
-  secret: process.env.BETTER_AUTH_SECRET,
-  advanced: {
-    // WARNING: `trustHost: true` can be a security risk if the application is
-    // deployed behind a reverse proxy that doesn't correctly set the
-    // `X-Forwarded-Host` header, or if the application is susceptible to
-    // Host header injection attacks.
-    // It tells `better-auth` to trust the `Host` header for determining
-    // the callback URL, which can be manipulated in certain scenarios.
-    // Ensure proper proxy configuration or consider setting to `false`
-    // and explicitly configuring the `url` option if there are concerns.
-    trustHost: true,
-  },
   emailAndPassword: {
     enabled: true,
-    autoSignup: true,
-    requireEmailVerification: false,
+    autoSignIn: true,
+  },
+  socialProviders: {
+    github: {
+      clientId: process.env.GITHUB_CLIENT_ID as string,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
+    },
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID as string,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+    },
   },
   plugins: [
     polar({

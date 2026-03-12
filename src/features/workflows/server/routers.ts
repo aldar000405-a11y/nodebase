@@ -189,6 +189,7 @@ export const workflowsRouter = createTRPCRouter({
               type: (node.type as NodeType) || NodeType.INITIAL,
               position: node.position,
               data: node.data || {},
+              credentialId: node.data?.credentialId ? String(node.data.credentialId) : null,
             })),
           });
         }

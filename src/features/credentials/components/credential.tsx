@@ -37,7 +37,7 @@ import { useSuspenseCredential } from "../hooks/use-credentials";
 const formSchema = z.object({
     name: z.string().min(1, "Name is required"),
     type: z.enum(["OPENAI", "ANTHROPIC", "GEMINI"]),
-    value: z.string().min(1, "Value is required"),
+    value: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -67,7 +67,8 @@ interface CredentialFormProps {
         id?: string;
         name: string;
         type: CredentialType;
-        value: string;
+        value?: string;
+        hasValue?: boolean;
     };
 };
 
@@ -83,9 +84,6 @@ export const CredentialForm = ({
                 toast.success(`Credential "${data.name}" created successfully`);
                 utils.credentials.getMany.invalidate();
                 router.push("/credintials");
-            },
-            onError: (error) => {
-                toast.error(`Failed to create credential: ${error.message}`);
             },
         });
 
@@ -104,7 +102,11 @@ export const CredentialForm = ({
     const isEdit = !!initialData?.id;
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
-        defaultValues: initialData || {
+        defaultValues: initialData ? {
+            name: initialData.name,
+            type: initialData.type as CredentialType,
+            value: initialData.hasValue ? "••••••••••••••••" : "",
+        } : {
             name: "",
             type: "OPENAI",
             value: "",
@@ -113,17 +115,28 @@ export const CredentialForm = ({
 
     const onSubmit = async (values: FormValues) => {
         if (isEdit && initialData?.id) {
-            await updateCredential.mutateAsync({
-                 id: initialData.id,
-                    ...values,
-            });
+            try {
+                const newValue = values.value === "••••••••••••••••" ? undefined : values.value;
+                await updateCredential.mutateAsync({
+                    id: initialData.id,
+                    name: values.name,
+                    ...(newValue ? { value: newValue } : {}),
+                });
+            } catch (error) {
+                console.error("Update credential error:", error);
+            }
          } else {
-            await createCredential.mutateAsync(values, {
-                onError: (error) => {
-                    handleError(error);
+            if (!values.value) {
+                form.setError("value", { message: "Value is required" });
+                return;
+            }
+            try {
+                await createCredential.mutateAsync({ ...values, value: values.value });
+            } catch (error) {
+                if (!handleError(error)) {
+                    toast.error("Failed to create credential");
                 }
-            });
-
+            }
         }
     };
 
@@ -164,7 +177,7 @@ export const CredentialForm = ({
                                                         <FormItem>
                                                             <FormLabel>Type</FormLabel>
                                                                 <Select
-                                                                   defaultValue={field.value}
+                                                                   value={field.value}
                                                                     onValueChange={field.onChange}
                                                                 >
                                                                     <FormControl>
@@ -202,10 +215,15 @@ export const CredentialForm = ({
                                                     render={({ field }) => (
                                                         <FormItem>
                                                             <FormLabel>API Key</FormLabel>
+                                                            {isEdit && initialData?.hasValue && (
+                                                                <p className="text-sm text-muted-foreground flex items-center gap-2 mb-2">
+                                                                    ✓ An API key is saved. Leave blank to keep the current key.
+                                                                </p>
+                                                            )}
                                                             <FormControl>
                                                                 <Input 
                                                                 type="password" 
-                                                                placeholder="sk-..." 
+                                                                placeholder={isEdit && initialData?.hasValue ? "••••••••••••••••" : "sk-..."} 
                                                                 {...field}
                                                                 />
                                                             </FormControl>

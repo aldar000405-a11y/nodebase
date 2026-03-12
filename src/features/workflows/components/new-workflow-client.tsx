@@ -4,16 +4,15 @@ import { Loader2Icon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { trpc } from "@/trpc/client";
 import { useUpgradeModel } from "@/hooks/use-upgrade-model";
 
 import { useCreateWorkflow } from "../hooks/use-workflows";
 
 export function NewWorkflowClient() {
   const router = useRouter();
-  const utils = trpc.useUtils();
   const createWorkflow = useCreateWorkflow();
   const startedRef = useRef(false);
   const { handleError, model } = useUpgradeModel();
@@ -36,19 +35,13 @@ export function NewWorkflowClient() {
         },
       },
     );
-  }, [
-    createWorkflow,
-    handleError,
-    router,
-    utils.workflows.getMany,
-    utils.workflows.getOne,
-  ]);
+  }, [createWorkflow, handleError, router]);
 
   return (
     <div className="flex h-full w-full items-center justify-center p-6">
       {model}
       <div className="w-full max-w-sm space-y-4 text-center">
-        {!createWorkflow.isError && (
+        {createWorkflow.isPending && (
           <div className="flex items-center justify-center gap-2">
             <Loader2Icon className="size-5 animate-spin text-muted-foreground" />
             <p className="text-sm text-muted-foreground">Creating workflow…</p>

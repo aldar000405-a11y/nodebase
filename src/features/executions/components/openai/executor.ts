@@ -6,6 +6,7 @@ import { NonRetriableError } from "inngest";
 import type { NodeExecutor } from "@/features/executions/types";
 import { openAiChannel } from "@/inngest/channels/openai";
 import prisma from "@/lib/db";
+import { decrypt } from "@/lib/encryption";
 
 Handlebars.registerHelper("json", (context) => {
   const jsonString = JSON.stringify(context, null, 2);
@@ -95,23 +96,17 @@ export const openAiExecutor: NodeExecutor<OpenAiData> = async ({
   // });
 
 const openai = createGoogleGenerativeAI({
-  apiKey: credential.value,
+  apiKey: decrypt(credential.value),
 });
 
   try {
-    const { text } = await step.ai.wrap(
-      `openai-generate-text-${nodeId}`,
-      generateText,
-      {
+    const { text } = await step.run(`openai-generate-text-${nodeId}`, async () => {
+      const result = await generateText({
         model: openai("gemini-2.5-flash"),
         prompt: `${systemPrompt}\n\n${userPrompt}`,
-        experimental_telemetry: {
-          isEnabled: true,
-          recordInputs: true,
-          recordOutputs: true,
-        },
-      },
-    );
+      });
+      return { text: result.text };
+    });
 
     await publish(
       openAiChannel().status({

@@ -37,7 +37,7 @@ export const CredentialsEmpty = () => {
 
   const handleCreate = () => {
    
-      router.push("/credentials/create");
+      router.push("/credintials/create");
  
   };
 
@@ -71,7 +71,7 @@ export const CredentialsItem = ({
 
   return (
     <EntityItem
-      href={`/credentials/${data.id}`}
+      href={`/credintials/${data.id}`}
       title={data.name}
       subtitle={
         <>
@@ -130,7 +130,7 @@ export const CredentialsHeader = ({ disabled }: { disabled?: boolean }) => {
     <EntityHeader
      title="credentials"
       description="Create and manage your credentials."
-      newButtonHref="/credentials/new"
+      newButtonHref="/credintials/create"
       newButtonLabel="new credential"
     />
   );

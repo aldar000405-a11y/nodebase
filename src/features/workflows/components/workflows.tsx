@@ -23,6 +23,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { trpc } from "@/trpc/client";
 import { useTransition } from "react";
+import { useUpgradeModel } from "@/hooks/use-upgrade-model";
+import { useHasActiveSubscription } from "@/features/subscriptions/hooks/use-subscription";
 
 type WorkflowListItem = Workflow & {
   triggerCount: number;
@@ -31,20 +33,30 @@ type WorkflowListItem = Workflow & {
 export const WorkflowsEmpty = () => {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const { hasActiveSubscription } = useHasActiveSubscription();
+  const { handleError: _handleError, model: upgradeModel } = useUpgradeModel();
+  const [upgradeOpen, setUpgradeOpen] = React.useState(false);
 
   const handleCreate = () => {
     if (isPending) return;
+    if (!hasActiveSubscription) {
+      setUpgradeOpen(true);
+      return;
+    }
     startTransition(() => {
       router.push("/workflows/new");
     });
   };
 
   return (
-    <EmptyView
-      onNew={handleCreate}
-      message="You haven't created any workflows yet.
+    <>
+      <UpgradeModelStandalone open={upgradeOpen} onOpenChange={setUpgradeOpen} />
+      <EmptyView
+        onNew={handleCreate}
+        message="You haven't created any workflows yet.
               Get started by creating your first workflow."
-    />
+      />
+    </>
   );
 };
 
@@ -150,19 +162,27 @@ export const WorkflowsList = () => {
 export const WorkflowsHeader = ({ disabled }: { disabled?: boolean }) => {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const { hasActiveSubscription } = useHasActiveSubscription();
+  const [upgradeOpen, setUpgradeOpen] = React.useState(false);
 
   const handleCreate = () => {
     if (isPending) return;
+    if (!hasActiveSubscription) {
+      setUpgradeOpen(true);
+      return;
+    }
     startTransition(() => {
       router.push("/workflows/new");
     });
   };
 
   return (
-    <EntityHeader
-      title="Workflows"
-      description="Automate your tasks with workflows."
-      onNew={handleCreate}
+    <>
+      <UpgradeModelStandalone open={upgradeOpen} onOpenChange={setUpgradeOpen} />
+      <EntityHeader
+        title="Workflows"
+        description="Automate your tasks with workflows."
+        onNew={handleCreate}
       newButtonLabel="New Workflow"
       disabled={disabled}
     />
