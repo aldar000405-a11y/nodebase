@@ -15,6 +15,7 @@ export const prisma =
   });
 
 // Add connection event listeners for debugging
+// biome-ignore lint/suspicious/noExplicitAny: Prisma's $on type requires any for error event handler
 prisma.$on("error" as never, (e: any) => {
   console.error("Prisma error:", e.message);
 });

@@ -1,7 +1,28 @@
-/** @type {import('tailwindcss').Config} */
+﻿/** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    "./src/**/*.{js,ts,jsx,tsx}", // كل ملفات مشروعك
+    "./src/**/*.{js,ts,jsx,tsx}",
+    "!./src/components/AuthPage.tsx",
+  ],
+  safelist: [
+    "min-h-screen",
+    "w-full",
+    "bg-neutral-950",
+    "text-neutral-50",
+    "animate-in",
+    "fade-in",
+    "zoom-in-95",
+    "slide-in-from-left",
+    "slide-in-from-right",
+    "auth-glow-shift",
+    "auth-primary-breathe",
+    "h-full",
+    "object-cover",
+    "size-3.5",
+    "size-4",
+    "size-5",
+    "sr-only",
+    "otp-caret-blink",
   ],
   theme: {
     extend: {

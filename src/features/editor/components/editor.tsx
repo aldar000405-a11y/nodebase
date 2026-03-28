@@ -1,118 +1,99 @@
-"use client";
-import type { ReactNode } from 'react';
-import { useState, useCallback, useMemo, useEffect } from 'react';
+﻿"use client";
+
 import {
-     ReactFlow,
-      applyNodeChanges,
-       applyEdgeChanges,
-        addEdge, 
-       type Node,
-      type  Edge,
-    type NodeChange,
-    type EdgeChange,
-    type Connection,
-    Background,
-    Controls,
-    MiniMap,
-    Panel
-    } from '@xyflow/react';
-import { useSetAtom } from 'jotai';
-import { AddNodeButton } from '@/features/editor/components/add-node-button';
+  addEdge,
+  applyEdgeChanges,
+  applyNodeChanges,
+  Background,
+  type Connection,
+  Controls,
+  type Edge,
+  type EdgeChange,
+  MiniMap,
+  type Node,
+  type NodeChange,
+  ReactFlow,
+} from "@xyflow/react";
+import { useSetAtom } from "jotai";
+import type { ReactNode } from "react";
+import { useCallback, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { ErrorView, LoadingView } from "@/components/entity-components";
-import { useSuspenseWorkflow } from "@/features/workflows/hooks/use-workflows";
-import '@xyflow/react/dist/style.css';
-import { nodeComponents } from '@/config/node-components';
+import { useSuspenseProject } from "@/features/projects/hooks/use-projects";
+import "@xyflow/react/dist/style.css";
 import { editorAtom } from "../store/atoms";
-import { NodeType } from "@/generated/prisma";
-import { ExecuteWorkflowButton } from '@/features/editor/components/execute-workflow-button';
-import { NodeSelectorFlowStateProvider } from "@/components/node-selector";
-
 
 export const EditorLoading = () => {
-  return  <LoadingView message="Loading editor..."/>;
+  return <LoadingView message="Loading project board..." />;
 };
 
 export const EditorError = ({ message }: { message?: string }) => {
-        return <ErrorView message={message ?? "Error loading editor."} />;
+  return <ErrorView message={message ?? "Error loading project board."} />;
 };
 
-
-
-export const EditorErrorBoundary = ({
-    children,
-}: {
-    children: ReactNode;
-}) => {
-    return (
-        <ErrorBoundary
-            fallbackRender={({ error }) => <EditorError message={error.message} />}
-        >
-            {children}
-        </ErrorBoundary>
-    );
+export const EditorErrorBoundary = ({ children }: { children: ReactNode }) => {
+  return (
+    <ErrorBoundary
+      fallbackRender={({ error }) => (
+        <EditorError
+          message={error instanceof Error ? error.message : "Unknown error"}
+        />
+      )}
+    >
+      {children}
+    </ErrorBoundary>
+  );
 };
 
-export const Editor = ({ workflowId }: { workflowId: string }) => {
-    const { data: workflow } = useSuspenseWorkflow(workflowId);
+export const Editor = ({ projectId }: { projectId: string }) => {
+  const { data: project } = useSuspenseProject(projectId);
+  const setEditor = useSetAtom(editorAtom);
 
-    const setEditor = useSetAtom(editorAtom);
-
-    const [nodes, setNodes] = useState<Node[]>(workflow.nodes);
-    const [edges, setEdges] = useState<Edge[]>(workflow.edges);
-
-    // Prefetch node component modules to avoid delayed chunk loading
-    useEffect(() => {
-      void import('@/features/executions/components/http-request/node');
-      void import('@/features/triggers/manual-trigger/node');
-    }, []);
+  const [nodes, setNodes] = useState<Node[]>(
+    project.nodes as unknown as Node[],
+  );
+  const [edges, setEdges] = useState<Edge[]>(
+    project.edges as unknown as Edge[],
+  );
 
   const onNodesChange = useCallback(
-    (changes: NodeChange[]) => setNodes((nodesSnapshot) => applyNodeChanges(changes, nodesSnapshot)),
+    (changes: NodeChange[]) =>
+      setNodes((nodesSnapshot) => applyNodeChanges(changes, nodesSnapshot)),
     [],
   );
+
   const onEdgesChange = useCallback(
-    (changes: EdgeChange[]) => setEdges((edgesSnapshot) => applyEdgeChanges(changes, edgesSnapshot)),
+    (changes: EdgeChange[]) =>
+      setEdges((edgesSnapshot) => applyEdgeChanges(changes, edgesSnapshot)),
     [],
   );
+
   const onConnect = useCallback(
-    (params: Connection) => setEdges((edgesSnapshot) => addEdge(params, edgesSnapshot)),
+    (params: Connection) =>
+      setEdges((edgesSnapshot) => addEdge(params, edgesSnapshot)),
     [],
   );
-  const hasManualTrigger = useMemo(() => {
-    return nodes.some((node) => node.type === NodeType.MANUAL_TRIGGER)
-  }, [nodes])
-    return (
-        <div className="size-full">
-          <NodeSelectorFlowStateProvider nodes={nodes} setNodes={setNodes}>
-            <ReactFlow
-              nodes={nodes}
-              edges={edges}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
-              onConnect={onConnect}
-              nodeTypes={nodeComponents}
-              onInit={setEditor}
-              fitView
-              snapGrid={[10, 10]}
-              snapToGrid
-              panOnScroll
-              panOnDrag={false}
-              selectionOnDrag
-            >
-              <Background />
-              <Controls />
-              <MiniMap />
-              <Panel position="top-right">
-                <AddNodeButton />
-              </Panel>
-              {hasManualTrigger && (
-                <Panel position="bottom-center">
-                  <ExecuteWorkflowButton workflowId={workflowId} />
-                </Panel>
-              )}
-            </ReactFlow>
-          </NodeSelectorFlowStateProvider>
-        </div>
-    );
+
+  return (
+    <div className="size-full">
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
+        onInit={setEditor}
+        fitView
+        snapGrid={[10, 10]}
+        snapToGrid
+        panOnScroll
+        panOnDrag={false}
+        selectionOnDrag
+      >
+        <Background />
+        <Controls />
+        <MiniMap />
+      </ReactFlow>
+    </div>
+  );
 };

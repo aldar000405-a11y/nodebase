@@ -1,49 +1,25 @@
-import { useEffect, useState } from "react";
-import { PAGINATION } from "@/config/constants";
+"use client";
 
-interface UseEntitySearchParams<
-  T extends {
-    search: string;
-    page: number;
-  },
-> {
+import { useCallback, useState } from "react";
+
+interface UseEntitySearchParams<T extends { search: string; page: number }> {
   params: T;
-  setParams: (params: T) => void;
-  debounceMs?: number;
+  setParams: (params: Partial<T>) => void;
 }
 
-export function useEntitySearch<
-  T extends {
-    search: string;
-    page: number;
-  },
->({ params, setParams, debounceMs = 500 }: UseEntitySearchParams<T>) {
-  const [localSearch, setLocalSearch] = useState(
-    String((params as any).search ?? ""),
+export function useEntitySearch<T extends { search: string; page: number }>({
+  params,
+  setParams,
+}: UseEntitySearchParams<T>) {
+  const [searchValue, setSearchValue] = useState(params.search ?? "");
+
+  const onSearchChange = useCallback(
+    (value: string) => {
+      setSearchValue(value);
+      setParams({ search: value, page: 1 } as Partial<T>);
+    },
+    [setParams],
   );
 
-  useEffect(() => {
-    const paramsSearch = String((params as any).search ?? "");
-
-    const timer = setTimeout(() => {
-      if (localSearch !== paramsSearch) {
-        setParams({
-          ...params,
-          search: localSearch,
-          page: PAGINATION.DEFAULT_PAGE,
-        });
-      }
-    }, debounceMs);
-
-    return () => clearTimeout(timer);
-  }, [localSearch, params, setParams, debounceMs]);
-
-  useEffect(() => {
-    setLocalSearch(String((params as any).search ?? ""));
-  }, [params.search]);
-
-  return {
-    searchValue: localSearch,
-    onSearchChange: setLocalSearch,
-  };
+  return { searchValue, onSearchChange };
 }

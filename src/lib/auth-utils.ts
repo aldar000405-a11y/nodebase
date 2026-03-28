@@ -19,6 +19,6 @@ export const requireUnauth = async () => {
   });
 
   if (session) {
-    redirect("/workflows");
+    redirect("/projects");
   }
 };

@@ -1,5 +1,5 @@
 // src/lib/cache.ts
-const cache = new Map<string, { value: any; expiry: number }>();
+const cache = new Map<string, { value: unknown; expiry: number }>();
 
 export const getFromCache = <T>(key: string): T | undefined => {
   const entry = cache.get(key);

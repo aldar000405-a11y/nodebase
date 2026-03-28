@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  CreditCardIcon,
-  FolderOpenIcon,
-  HistoryIcon,
-  KeyIcon,
-  LogOut,
-  StarIcon,
-} from "lucide-react";
+import { CreditCardIcon, FolderOpenIcon, LogOut, StarIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -24,18 +17,14 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { authClient } from "@/lib/auth-client";
 import { useHasActiveSubscription } from "@/features/subscriptions/hooks/use-subscription";
+import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/trpc/client";
 
 const menuItem = [
   {
     title: "Main",
-    items: [
-      { title: "Workflows", icon: FolderOpenIcon, url: "/workflows" },
-      { title: "Credentials", icon: KeyIcon, url: "/credintials" },
-      { title: "Executions", icon: HistoryIcon, url: "/executions" },
-    ],
+    items: [{ title: "Projects", icon: FolderOpenIcon, url: "/projects" }],
   },
 ];
 
@@ -50,10 +39,8 @@ export const AppSidebar = () => {
 
   // Prefetch data on hover for faster navigation
   const handlePrefetch = (url: string) => {
-    if (url === "/workflows") {
-      utils.workflows.getMany.prefetch({ page: 1, pageSize: 5, search: "" });
-    } else if (url === "/credintials") {
-      utils.credentials.getMany.prefetch({ page: 1, pageSize: 5, search: "" });
+    if (url === "/projects") {
+      utils.projects.getMany.prefetch({ page: 1, pageSize: 5, search: "" });
     }
   };
 
@@ -67,7 +54,7 @@ export const AppSidebar = () => {
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton asChild className="gap-x-3 h-10 px-3">
-                <Link href="/workflows" prefetch>
+                <Link href="/projects" prefetch>
                   <Image
                     src="/logos/logo.svg"
                     alt="nodebase"
@@ -146,8 +133,27 @@ export const AppSidebar = () => {
             </SidebarMenuButton>
           </SidebarMenuItem>
 
-          <SidebarMenuItem className="px-4 py-2 text-xs text-muted-foreground truncate border-t border-slate-200">
-            {user?.email}
+          <SidebarMenuItem className="p-4 border-t border-[#333333] w-full overflow-hidden">
+            <div className="w-full overflow-hidden">
+              <span
+                className="truncate w-full block text-[11px] text-gray-800"
+                style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+              >
+                {user?.name ?? "ADMIN_USER"}
+              </span>
+              <span
+                className="truncate w-full block text-[10px] text-gray-600"
+                style={{ fontFamily: "'IBM Plex Mono', monospace" }}
+              >
+                {user?.email ?? "-"}
+              </span>
+              <span
+                className="truncate w-full block text-[10px] uppercase text-gray-500"
+                style={{ fontFamily: "'IBM Plex Mono', monospace" }}
+              >
+                {hasActiveSubscription ? "ADMIN_USER" : "SYSTEM_OPERATOR"}
+              </span>
+            </div>
           </SidebarMenuItem>
 
           <SidebarMenuItem>

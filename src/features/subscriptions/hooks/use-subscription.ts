@@ -22,7 +22,7 @@ export const useHasActiveSubscription = () => {
       staleTime: 60 * 1000,
       // Refetch when window regains focus (e.g. after returning from Polar checkout)
       refetchOnWindowFocus: true,
-    }
+    },
   );
   const hasActiveSubscription = data?.hasPremium || false;
 

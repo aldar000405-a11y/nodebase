@@ -1,9 +1,8 @@
-// src/components/SubscriptionRefresher.tsx
 "use client";
 
-import { useEffect } from "react";
-import { useSearchParams } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "next/navigation";
+import { useEffect } from "react";
 import { toast } from "sonner";
 
 export const SubscriptionRefresher = () => {
@@ -17,7 +16,9 @@ export const SubscriptionRefresher = () => {
       // Invalidate both the old subscription key and the tRPC premium status query
       queryClient.invalidateQueries({ queryKey: ["subscription"] });
       // Invalidate the tRPC query for premium status (matches the query key pattern used by tRPC)
-      queryClient.invalidateQueries({ queryKey: [["users", "getPremiumStatus"]] });
+      queryClient.invalidateQueries({
+        queryKey: [["users", "getPremiumStatus"]],
+      });
       // Also refetch all queries that might depend on premium status
       queryClient.refetchQueries({ queryKey: [["users", "getPremiumStatus"]] });
       toast.success("Subscription updated successfully!");

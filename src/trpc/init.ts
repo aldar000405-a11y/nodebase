@@ -1,10 +1,10 @@
 import { initTRPC, TRPCError } from "@trpc/server";
-import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { polarClient } from "@/lib/polar";
 import { headers } from "next/headers";
 import SuperJSON from "superjson";
+import { auth } from "@/lib/auth";
 import { getFromCache, setInCache } from "@/lib/cache"; // Import cache utility
+import { polarClient } from "@/lib/polar";
+import { prisma } from "@/lib/prisma";
 
 // Initialize tRPC
 
@@ -19,7 +19,7 @@ export const createTRPCContext = async () => {
 
   if (userId) {
     const cacheKey = `premiumStatus-${userId}`;
-    let cachedStatus = getFromCache<{ hasPremium: boolean }>(cacheKey);
+    const cachedStatus = getFromCache<{ hasPremium: boolean }>(cacheKey);
 
     if (cachedStatus) {
       hasPremium = cachedStatus.hasPremium;
@@ -93,8 +93,7 @@ export const premiumProcedure = protectedProcedure.use(
     if (!ctx.hasPremium) {
       throw new TRPCError({
         code: "FORBIDDEN",
-        message:
-          "You must have an active subscription to access this resource",
+        message: "You must have an active subscription to access this resource",
       });
     }
 

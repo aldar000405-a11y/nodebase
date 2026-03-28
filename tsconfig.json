@@ -29,7 +29,14 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
-    ".next/dev/dev/types/**/*.ts"
+    ".next/dev/dev/types/**/*.ts",
+    "prisma.config.js"
   ],
-  "exclude": ["node_modules", "http_dialog_full.tsx", "http_dialog_temp.tsx"]
+  "exclude": [
+    "node_modules",
+    "http_dialog_full.tsx",
+    "http_dialog_temp.tsx",
+    "**/*-2.ts",
+    "**/*-2.tsx"
+  ]
 }

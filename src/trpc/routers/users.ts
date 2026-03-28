@@ -1,5 +1,5 @@
-import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import { z } from "zod";
+import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 
 export const usersRouter = createTRPCRouter({
   getUsers: protectedProcedure

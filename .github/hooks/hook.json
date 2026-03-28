@@ -1,0 +1,14 @@
+{
+    "hooks": {
+        "SessionStart": [
+            {
+                "type": "command",
+                "command": "npx tsc --noEmit && npx biome check src/"
+            },
+            {
+                "type": "command",
+                "command": "git status -s"
+            }
+        ]
+    }
+}

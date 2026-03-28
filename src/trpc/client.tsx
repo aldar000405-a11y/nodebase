@@ -5,8 +5,8 @@ import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import { createTRPCReact } from "@trpc/react-query";
 import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";
 import { useState } from "react";
-import type { AppRouter } from "./routers/-app";
 import SuperJSON from "superjson";
+import type { AppRouter } from "./routers/-app";
 
 function getUrl() {
   if (typeof window !== "undefined") {

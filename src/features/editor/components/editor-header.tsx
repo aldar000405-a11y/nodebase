@@ -1,8 +1,11 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { SaveIcon } from "lucide-react";
+import { useAtomValue } from "jotai";
+import { Loader2Icon, SaveIcon } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import type { KeyboardEvent } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -10,25 +13,21 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useEffect, useRef, useState, useTransition } from "react";
-import type { KeyboardEvent } from "react";
-import Link from "next/link";
-import {
-  useSuspenseWorkflow,
-  useUpdateWorkflow,
-  useUpdateWorkflowName,
-} from "@/features/workflows/hooks/use-workflows";
-import { trpc } from "@/trpc/client";
-import { useRouter } from "next/navigation";
-import { Loader2Icon } from "lucide-react";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAtomValue } from "jotai";
+import {
+  useSuspenseProject,
+  useUpdateProjectCanvas,
+  useUpdateProjectName,
+} from "@/features/projects/hooks/use-projects";
+import { trpc } from "@/trpc/client";
 import { editorAtom } from "../store/atoms";
 
-export const EditorSaveButton = ({ workflowId }: { workflowId: string }) => {
+export const EditorSaveButton = ({ projectId }: { projectId: string }) => {
   const editor = useAtomValue(editorAtom);
-  const saveWorkflow = useUpdateWorkflow();
+  const saveProject = useUpdateProjectCanvas();
 
   const handleSave = () => {
     if (!editor) {
@@ -38,15 +37,15 @@ export const EditorSaveButton = ({ workflowId }: { workflowId: string }) => {
     const nodes = editor.getNodes();
     const edges = editor.getEdges();
 
-    saveWorkflow.mutate({
-      id: workflowId,
+    saveProject.mutate({
+      id: projectId,
       nodes,
       edges,
     });
   };
   return (
     <div className="ml-auto">
-      <Button size="sm" onClick={handleSave} disabled={saveWorkflow.isPending}>
+      <Button size="sm" onClick={handleSave} disabled={saveProject.isPending}>
         <SaveIcon className="size-4" />
         Save
       </Button>
@@ -54,9 +53,9 @@ export const EditorSaveButton = ({ workflowId }: { workflowId: string }) => {
   );
 };
 
-export const EditorNameInputs = ({ workflowId }: { workflowId: string }) => {
-  const { data: workflow } = useSuspenseWorkflow(workflowId);
-  const updateWorkflow = useUpdateWorkflowName();
+export const EditorNameInputs = ({ projectId }: { projectId: string }) => {
+  const { data: project } = useSuspenseProject(projectId);
+  const updateProjectName = useUpdateProjectName();
 
   // Prevent name flicker during refetch/save by keeping a local optimistic value.
   const [optimisticName, setOptimisticName] = useState<string | null>(null);
@@ -65,11 +64,11 @@ export const EditorNameInputs = ({ workflowId }: { workflowId: string }) => {
   // Only use state for the input value during editing
   const [editingName, setEditingName] = useState("");
 
-  const displayName = optimisticName ?? workflow?.name ?? "Untitled";
+  const displayName = optimisticName ?? project?.name ?? "Untitled";
 
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // When entering edit mode, initialize with current workflow name
+  // When entering edit mode, initialize with current project name
   const startEditing = () => {
     setEditingName(displayName);
     setIsEditing(true);
@@ -77,10 +76,10 @@ export const EditorNameInputs = ({ workflowId }: { workflowId: string }) => {
 
   // If server data catches up, clear optimistic name.
   useEffect(() => {
-    if (optimisticName && workflow?.name === optimisticName) {
+    if (optimisticName && project?.name === optimisticName) {
       setOptimisticName(null);
     }
-  }, [optimisticName, workflow?.name]);
+  }, [optimisticName, project?.name]);
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -93,7 +92,7 @@ export const EditorNameInputs = ({ workflowId }: { workflowId: string }) => {
     const trimmedName = editingName.trim();
 
     // Reset if empty or unchanged
-    const currentName = optimisticName ?? workflow?.name ?? "";
+    const currentName = optimisticName ?? project?.name ?? "";
     if (!trimmedName || trimmedName === currentName) {
       setIsEditing(false);
       return;
@@ -102,8 +101,8 @@ export const EditorNameInputs = ({ workflowId }: { workflowId: string }) => {
     try {
       // Update UI immediately; this avoids flashes to an older cached name.
       setOptimisticName(trimmedName);
-      await updateWorkflow.mutateAsync({
-        id: workflowId,
+      await updateProjectName.mutateAsync({
+        id: projectId,
         name: trimmedName,
       });
     } catch {
@@ -117,7 +116,7 @@ export const EditorNameInputs = ({ workflowId }: { workflowId: string }) => {
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-      handleSave();
+      void handleSave();
     } else if (e.key === "Escape") {
       setIsEditing(false);
     }
@@ -127,7 +126,7 @@ export const EditorNameInputs = ({ workflowId }: { workflowId: string }) => {
     return (
       <BreadcrumbItem>
         <Input
-          disabled={updateWorkflow.isPending}
+          disabled={updateProjectName.isPending}
           ref={inputRef}
           value={editingName}
           onChange={(e) => setEditingName(e.target.value)}
@@ -139,7 +138,7 @@ export const EditorNameInputs = ({ workflowId }: { workflowId: string }) => {
     );
   }
 
-  // Display workflow.name directly from query data - no state involved
+  // Display project name directly from query data - no state involved
   return (
     <BreadcrumbItem
       onClick={startEditing}
@@ -151,14 +150,14 @@ export const EditorNameInputs = ({ workflowId }: { workflowId: string }) => {
   );
 };
 
-export const EditorBreadcrumbs = ({ workflowId }: { workflowId: string }) => {
+export const EditorBreadcrumbs = ({ projectId }: { projectId: string }) => {
   const utils = trpc.useUtils();
   const router = useRouter();
   const [isNavigating, startTransition] = useTransition();
 
-  // Prefetch workflows list on hover for faster back navigation
+  // Prefetch projects list on hover for faster back navigation
   const handlePrefetch = () => {
-    utils.workflows.getMany.prefetch({ page: 1, pageSize: 5, search: "" });
+    utils.projects.getMany.prefetch({ page: 1, pageSize: 5, search: "" });
   };
 
   const handleClick = (e: React.MouseEvent) => {
@@ -167,7 +166,7 @@ export const EditorBreadcrumbs = ({ workflowId }: { workflowId: string }) => {
     if (isNavigating) return;
 
     startTransition(() => {
-      router.push("/workflows");
+      router.push("/projects");
     });
   };
 
@@ -178,7 +177,7 @@ export const EditorBreadcrumbs = ({ workflowId }: { workflowId: string }) => {
           <BreadcrumbLink asChild>
             <Link
               prefetch
-              href="/workflows"
+              href="/projects"
               onMouseEnter={handlePrefetch}
               onClick={handleClick}
               className={isNavigating ? "opacity-50 pointer-events-none" : ""}
@@ -186,16 +185,16 @@ export const EditorBreadcrumbs = ({ workflowId }: { workflowId: string }) => {
               {isNavigating ? (
                 <span className="flex items-center gap-1">
                   <Loader2Icon className="size-3 animate-spin" />
-                  Workflows
+                  Projects
                 </span>
               ) : (
-                "Workflows"
+                "Projects"
               )}
             </Link>
           </BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator />
-        <EditorNameInputs workflowId={workflowId} />
+        <EditorNameInputs projectId={projectId} />
       </BreadcrumbList>
     </Breadcrumb>
   );
@@ -220,7 +219,7 @@ export const EditorHeaderLoading = () => {
   );
 };
 
-export const EditorHeader = ({ workflowId }: { workflowId: string }) => {
+export const EditorHeader = ({ projectId }: { projectId: string }) => {
   return (
     <header
       className="flex h-14 
@@ -230,9 +229,9 @@ export const EditorHeader = ({ workflowId }: { workflowId: string }) => {
       <div className="flex w-full items-center justify-between gap-3">
         <div className="flex items-center gap-2 min-w-0">
           <SidebarTrigger />
-          <EditorBreadcrumbs workflowId={workflowId} />
+          <EditorBreadcrumbs projectId={projectId} />
         </div>
-        <EditorSaveButton workflowId={workflowId} />
+        <EditorSaveButton projectId={projectId} />
       </div>
     </header>
   );
